@@ -1,0 +1,24 @@
+.appContainer {
+  height: 100vh;
+  background-color: #f1f3f5;
+  /* background: #f8f9fa; */
+  padding: 0;
+  margin: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pageContainer {
+  margin-top: 2rem;
+  height: 100%;
+  width: 100%;
+  max-width: 100rem;
+  /* background: #f8f9fa; */
+  display: flex;
+  flex-direction: column;
+  padding: 0 2rem 2rem 2rem;
+  overflow: auto;
+  gap: 2rem;
+}
