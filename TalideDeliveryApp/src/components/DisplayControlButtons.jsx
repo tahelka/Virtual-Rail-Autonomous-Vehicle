@@ -7,8 +7,8 @@ function clickMe(){
 function DisplayControlButtons() {
   return (
     <div className={styles.displayControlButtons}>
-      < button onClick={clickMe}>
-      Button
+      < button className={styles.simpleButton} onClick={clickMe}>
+      Simple Button
       </button>
 
     </div>
