@@ -2,7 +2,7 @@
   width: 100%;
   display: flex;
   flex-direction: row;
-  justify-content: space-around;
+  justify-content: space-between;
 }
 
 @media (max-width: 960px) {
@@ -14,23 +14,23 @@
 }
 
 .map {
-  width: 45rem;
+  width: 46rem;
   /* background-color: green; */
-  height: 45rem;
-  border-radius: 2rem;
+  height: 46rem;
+  border-radius: 9px;
   box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
 }
 
 .mapStyle {
-  width: 45rem;
-  height: 45rem;
-  border-radius: 2rem;
+  width: 46rem;
+  height: 46rem;
+  border-radius: 9px;
 }
 
 .detailsAndControl {
-  width: 45rem;
+  width: 46rem;
   background-color: #f8f9fa;
-  height: 45rem;
-  border-radius: 2rem;
+  height: 46rem;
+  border-radius: 9px;
   box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
 }

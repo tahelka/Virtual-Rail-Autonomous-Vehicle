@@ -1,0 +1,36 @@
+.navbar {
+  width: 100%;
+}
+
+.navbar ul {
+  width: 100%;
+  list-style: none;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  background-color: #f8f9fa;
+  border-radius: 9px;
+  box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+}
+
+.navbar a:link,
+.navbar a:visited {
+  text-decoration: none;
+  color: #495057;
+  padding: 1rem 1rem;
+  font-size: 1.7rem;
+}
+
+.navbar a:hover {
+  color: #212529;
+}
+
+.navbar li {
+  padding: 1rem 1rem;
+}
+
+.navbar a:global(.active) {
+  font-weight: 600;
+  border-bottom: 3px solid #212529;
+  color: #212529;
+}
