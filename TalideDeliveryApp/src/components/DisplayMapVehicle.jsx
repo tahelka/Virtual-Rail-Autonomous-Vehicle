@@ -4,7 +4,7 @@ function DisplayMapVehicle() {
   return (
     <div className={styles.displayContainer}>
       <div className={styles.map}>
-        <img src="map.png" className={styles.mapStyle} />
+        <img src="../public/map.png" className={styles.mapStyle} />
       </div>
       <div className={styles.detailsAndControl}></div>
     </div>
