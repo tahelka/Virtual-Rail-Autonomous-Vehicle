@@ -7,10 +7,12 @@ function App() {
     <>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate to="/app" />} />
+          <Route path="/" element={<Navigate to="/homepage" />} />
           <Route path="login" element={<h1>login</h1>} />
+          <Route path="homepage" element={<h1>homepage</h1>} />
           <Route path="app" element={<AppLayout />}>
-            <Route path="profile" element={<h1>Profile</h1>} />
+            <Route index element={<Navigate replace to="general" />} />
+            <Route path="general" element={<h1>General</h1>} />
             <Route path="cars" element={<h1>Cars</h1>} />
             <Route path="data" element={<h1>Data</h1>} />
             <Route path="contacts" element={<h1>Contacts</h1>} />
