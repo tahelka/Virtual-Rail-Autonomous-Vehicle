@@ -26,13 +26,4 @@ function NavBar() {
   );
 }
 
-{
-  /* <Route index element={<Navigate replace to="general" />} />
-            <Route path="general" element={<h1>General</h1>} />
-            <Route path="cars" element={<h1>Cars</h1>} />
-            <Route path="data" element={<h1>Data</h1>} />
-            <Route path="contacts" element={<h1>Contacts</h1>} />
-            <Route path="admin" element={<h1>admin</h1>} /> */
-}
-
 export default NavBar;

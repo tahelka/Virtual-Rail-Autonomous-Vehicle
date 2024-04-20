@@ -1,5 +1,5 @@
 import styles from "./DisplayMapVehicle.module.css";
-import DisplayControlButtons from './DisplayControlButtons';
+import DisplayControlButtons from "../DisplayControlButtons";
 
 function DisplayMapVehicle() {
   return (
@@ -7,7 +7,10 @@ function DisplayMapVehicle() {
       <div className={styles.map}>
         <img src="../../public/map.png" className={styles.mapStyle} />
       </div>
-      <div className={styles.detailsAndControl}> <DisplayControlButtons/> </div>
+      <div className={styles.detailsAndControl}>
+        {" "}
+        <DisplayControlButtons />{" "}
+      </div>
     </div>
   );
 }
