@@ -22,8 +22,6 @@
 
 [x] create temporary login system
 
-[x] create path finding algorithm and data structre
-
 ## Server
 
 [x] create structure for backend server
@@ -39,5 +37,7 @@
 [x] create refresh token endpoint in the server
 
 ## Vehicle
+
+[x] create path finding algorithm and data structre
 
 [ ] create vehicle line following algorithm
