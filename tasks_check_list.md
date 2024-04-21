@@ -38,6 +38,6 @@
 
 ## Vehicle
 
-[x] create path finding algorithm and data structre
+[x] create path finding algorithm and data structure
 
 [ ] create vehicle line following algorithm
