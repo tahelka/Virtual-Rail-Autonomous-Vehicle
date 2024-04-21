@@ -1,6 +1,6 @@
 # Tasks done by Lior
 
-### Application
+## Application
 
 [x] create react vite project and set needed configurations
 
@@ -24,7 +24,7 @@
 
 [x] create path finding algorithm and data structre
 
-### Server
+## Server
 
 [x] create structure for backend server
 
@@ -38,6 +38,6 @@
 
 [x] create refresh token endpoint in the server
 
-### Vehicle
+## Vehicle
 
 [ ] create vehicle line following algorithm
