@@ -29,8 +29,8 @@
 
 .detailsAndControl {
   width: 46rem;
-  background-color: #f8f9fa;
+  /*background-color: #f8f9fa;*/
   height: 46rem;
   border-radius: 9px;
-  box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+  /*box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;*/
 }

@@ -1,18 +1,14 @@
-//import React from 'react';
 import PropTypes from 'prop-types';
-import styles from "../DisplayControlButtons.module.css";
+import buttonStyles from "../StyledButton.module.css";
 
-const DropDownButtonItem = ({children, onClick}) => {
-    return (
-        <div className = {styles.button}> {onClick}
-            {children}
-        </div>
-    );
+const DropDownButtonItem = ({ children }) => {
+  const DropDownButtonItemStyles = `${buttonStyles.buttonItem} ${buttonStyles.buttonText}`;
+
+  return <div className={DropDownButtonItemStyles}>{children}</div>;
 };
 
 DropDownButtonItem.propTypes = {
-    children: PropTypes.node.isRequired,
-    onClick: PropTypes.node.isRequired,
-  };
+  children: PropTypes.node.isRequired,
+};
 
 export default DropDownButtonItem;
