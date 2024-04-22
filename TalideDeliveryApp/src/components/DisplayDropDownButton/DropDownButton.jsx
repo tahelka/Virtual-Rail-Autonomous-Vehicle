@@ -2,13 +2,16 @@
 import PropTypes from 'prop-types';
 import {FaChevronDown, FaChevronUp} from "react-icons/fa";
 import styles from "../DisplayControlButtons.module.css";
+import buttonStyles from "../StyledButton.module.css";
 
 const DropDownButton = ({children, open, toggle}) => {
+    const DropDownButtonStyles = `${styles.dropDownButton} ${open ? styles.dropDownButtonOpen : null}`;
+
     return (
-        <div className={`${styles.dropDownButton} ${open ? styles.dropDownButtonOpen : null}`}>
-        <span className={styles.buttonText}>{children}</span>
+        <button className={DropDownButtonStyles}>
+        <span className={buttonStyles.buttonText}>{children}</span>
         <span onClick={toggle} className={styles.toggleIcon}>{open ? <FaChevronUp /> : <FaChevronDown />}</span>
-        </div>
+        </button>
     );
 };
 

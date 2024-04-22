@@ -1,50 +1,33 @@
 .displayControlButtons {
-  box-shadow: rgba(226, 3, 3, 0.734) 0px 1px 4px;
   height: 46rem;
-  border-radius: 9px;
 }
 
-.button {
-  width: 100%;
-  height: 6rem;
-  box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
-  border-radius: 9px;
-  padding: 2rem;
-  cursor: pointer;
-  margin-bottom: 0.5rem;
+.buttonCarControlContainer {
+  display: flex;
+  flex-direction: column;
+  /*align-items: center;*/
 }
 
-.button:hover {
-  background-color: pink;
-}
-
-/* class for the button and the content */
 .displayDropDownButton {
+  height: auto;
   width: 100%;
   position: relative;
 }
 
 .dropDownButton {
+  display: flex;
   box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
   border-radius: 9px;
   padding: 2rem;
   height: 6rem;
-  display: flex;
+  width: 100%;
+  margin-bottom: 0.5rem;
 }
 
 .dropDownButtonOpen {
   background-color: pink; 
   box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px; 
   border: 3px solid rgb(249, 158, 173);
-}
-
-.buttonText {
-  flex: 1; /* Make the text take up remaining space */
-  font-family: 'Roboto', sans-serif; 
-  font-size: 16px; 
-  display: flex;
-  justify-content: center; 
-  align-items: center; 
 }
 
 .toggleIcon {
@@ -54,29 +37,29 @@
   cursor: pointer;
 }
 
-.contentClosed {
-  opacity: 0;
-  cursor: default;
+.toggleIcon:hover {
+  color:rgb(53, 150, 182);
 }
 
-.dropDownContent::-webkit-scrollbar {
-  width: 0;
-  height: 0;
+.contentClosed {
+  display: none;
+  cursor: default;
 }
 
 .contentOpen {
   display: flex;
   flex-direction: column;
   position: absolute;
-  min-width: 100%;
-  padding: 1rem;
-  height: 25rem;
-  margin-top: 0.5rem;
-  background-color: whitesmoke;
-  border-radius: 9px;
-  box-shadow: rgba(204, 210, 217, 0.2) 0px 8px 24px;
-  overflow-y: scroll;
+  top: 100%;
+  width: 100%;
+  max-height: 200px;
   scrollbar-width: none;
-  -ms-overflow-style: none;
-  opacity: 1;
+  overflow-y: auto;
+  border-radius: 4px;
+  z-index: 1;
+  align-items: center;
+}
+
+.displayDropDownButton {
+  position: relative;
 }
