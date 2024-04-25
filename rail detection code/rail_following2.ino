@@ -23,6 +23,9 @@ int gpRf = 13; // Right 2
 int gpLed =  4; // Light
 String WiFiAddr ="";
 
+short direction = 0;
+bool no_edges_detected;
+
 void initializeCamera(camera_config_t &config) {
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
@@ -94,8 +97,6 @@ void setup() {
         Serial.println("Connection failed");
         return;
     }
-
-
 }
 
 
@@ -284,9 +285,7 @@ void captureAndProcessImage(WiFiClient client) {
   find_rail_edges(edge_image, CAMERA_WIDTH, CAMERA_HEIGHT, left_edge, right_edge);
 
   short avg_left_edge, avg_right_edge;
-  bool no_edges_detected;
   calculate_average_edges(left_edge, right_edge, CAMERA_HEIGHT, avg_left_edge, avg_right_edge, no_edges_detected, threshold_for_intersection);
-  short direction = 0;
   if (!no_edges_detected) 
   {
   // Determine the direction to move based on the position of the rail edges
@@ -294,6 +293,7 @@ void captureAndProcessImage(WiFiClient client) {
   }
   sendDataOverTCP(client,grayscale_image, binary_image, left_edge, right_edge, no_edges_detected ,direction, fb->len);
   // Don't forget to free the framebuffer when you're done.
+  
   esp_camera_fb_return(fb);
   free(binary_image); // Free the memory when done
   binary_image = NULL;
