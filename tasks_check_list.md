@@ -40,4 +40,6 @@
 
 [x] create path finding algorithm and data structure
 
-[ ] create vehicle line following algorithm
+[x] create video stream from vehicle to application
+
+[x] create machine vision algorithm for line detection
