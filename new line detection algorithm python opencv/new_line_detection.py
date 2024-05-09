@@ -132,8 +132,8 @@ def main():
     frame_counter = 0  # Initialize a frame counter
     command_interval = 7  # Send command every 7 frames
     send_commands = True  # Initialize the flag to True
-    last_turn_command = "no command"  # Initialize the last turn command to "no command"
     previous_command = "no command"  # Initialize the previous command to "no command"
+    previous_marker = -1
     while True:
         try:
             jpg, bytes = get_stream_bytes(stream, bytes)
@@ -163,17 +163,18 @@ def main():
                                 break
                             elif id_of_marker[0] == 5:
                                 command_sent = CROSS
+                            elif id_of_marker[0] == 6:
+                                command_sent = TURN_LEFT
 
-                            # Check if the current command is a turn command and is the same as the last turn command
-                            if command_sent in [TURN_LEFT, TURN_RIGHT, CROSS] and command_sent == last_turn_command:
+                            # Check if the current marker is the same as the previous marker
+                            if previous_marker == id_of_marker[0]:
                                 # If it is, do not send the command
                                 command_sent = None
                             else:
-                            # If it's not, update the last turn command only if the current command is different from the previous command
-                                if command_sent != previous_command:
-                                    last_turn_command = command_sent
+                                # If it is not, send the command
                                 send_command(command_sent)
-                                sleep(0.5)
+                                #sleep(0.5)
+                                previous_marker = id_of_marker[0]
 
                                 
                 elif frame_counter == command_interval and id_of_marker is None:  # If the counter reaches the command interval
@@ -187,7 +188,7 @@ def main():
                                command_sent = send_command(GO)
                         elif id_of_marker is None and foundContour == False:
                             command_sent = send_command(STOP)
-                        sleep(0.5)
+                        #sleep(0.5)
                     else:  # If the flag is False, send the STOP command
                         command_sent = send_command(STOP)
                 if frame_counter >= command_interval:
@@ -197,8 +198,8 @@ def main():
                 #command_text = f"Command: {command_sent if command_sent else 'No new command'}"
                 #cv2.putText(frame, command_text, (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
                 # Draw the frame counter on the frame
-                counter_text = f"Frame Counter: {frame_counter}"
-                cv2.putText(frame, counter_text, (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                #counter_text = f"Frame Counter: {frame_counter}"
+                #cv2.putText(frame, counter_text, (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
                 show_frames(binary_thresh, frame)
                 key = cv2.waitKey(1)
@@ -208,7 +209,6 @@ def main():
                 elif key == ord('d'):  # If the "d" key is pressed, toggle the flag
                     send_commands = not send_commands
                     
-                previous_command = command_sent
         except urllib.error.URLError as e:
             print(f"Stream error: {e}")
             break
