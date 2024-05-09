@@ -17,9 +17,9 @@ extern int gpRf;
 extern int gpLed;
 extern String WiFiAddr;
 
-const short regular_speed = 100;
+const short regular_speed = 100;//i think in the car right now there is 120 regular speed 
 const short high_speed = 180;
-const short turn_speed = 120;
+const short turn_speed = 110;//and 125 turn speed maybe
 
 void WheelAct(int nLf, int nLb, int nRf, int nRb);
 
