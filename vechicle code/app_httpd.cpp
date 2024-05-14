@@ -17,9 +17,10 @@ extern int gpRf;
 extern int gpLed;
 extern String WiFiAddr;
 
-const short regular_speed = 100;//i think in the car right now there is 120 regular speed 
-const short high_speed = 180;
-const short turn_speed = 110;//and 125 turn speed maybe
+const uint8_t regular_speed = 100;
+const uint8_t reverse_speed = 100;
+const uint8_t high_speed = 180;
+const uint8_t turn_speed = 110;
 
 void WheelAct(int nLf, int nLb, int nRf, int nRb);
 
@@ -301,6 +302,152 @@ static esp_err_t status_handler(httpd_req_t *req){
     return httpd_resp_send(req, json_response, strlen(json_response));
 }
 //前进按钮
+static esp_err_t action_handler(httpd_req_t *req){
+    char*  buf;
+    size_t buf_len;
+    // Record the start time
+    uint32_t startTime = millis();
+
+    /* Get header value string length and allocate memory for length + 1,
+     * extra byte for null termination */
+    buf_len = httpd_req_get_url_query_len(req) + 1;
+    if (buf_len > 1) {
+        buf = (char*)malloc(buf_len);
+        if (httpd_req_get_url_query_str(req, buf, buf_len) == ESP_OK) {
+            char param[32];
+            if (httpd_query_key_value(buf, "action", param, sizeof(param)) == ESP_OK) {
+                // Move forward
+                if (strcmp(param, "go") == 0) {
+                    WheelAct(regular_speed, LOW, regular_speed, LOW); // Move forward
+                    delay(175);
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                } 
+                // Move forward at high speed (cross intersection)
+                else if (strcmp(param, "cross") == 0) {
+                    WheelAct(high_speed, LOW, high_speed, LOW); // Move forward at high speed
+                    delay(200);
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                    delay(200);
+                }  
+                // Turn left
+                else if (strcmp(param, "left") == 0) {
+                    WheelAct(turn_speed, LOW, LOW, turn_speed); // Turn left
+                    delay(100);
+                    WheelAct(regular_speed, LOW, regular_speed, LOW); // Move forward
+                    delay(15);
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                } 
+                // Turn left at high speed
+                else if (strcmp(param, "turnLeft") == 0) {
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                    delay(200);
+                    WheelAct(high_speed, LOW, LOW, high_speed); // Turn left at high speed
+                    delay(600);
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                    delay(200);
+                    WheelAct(regular_speed, LOW, regular_speed, LOW); // Move forward
+                    delay(200);
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                }  
+                // Turn right
+                else if (strcmp(param, "right") == 0) {
+                    WheelAct(LOW, turn_speed, turn_speed, LOW); // Turn right
+                    delay(100);
+                    WheelAct(regular_speed, LOW, regular_speed, LOW); // Move forward
+                    delay(15);
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                }  
+                // Turn right at high speed
+                else if (strcmp(param, "turnRight") == 0) {
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                    delay(200);
+                    WheelAct(LOW, high_speed, high_speed, LOW); // Turn right at high speed
+                    delay(600);
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                    delay(200);
+                    WheelAct(regular_speed, LOW, regular_speed, LOW); // Move forward
+                    delay(200);
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                } 
+                // Stop
+                else if (strcmp(param, "stop") == 0) {
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                } 
+                // Move backward and turn left
+                else if (strcmp(param, "leftBack") == 0) {
+                    WheelAct(LOW, reverse_speed, LOW, reverse_speed); // Move backward
+                    delay(15);
+                    WheelAct(turn_speed, LOW, LOW, turn_speed); // Turn left
+                    delay(100);
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                } 
+                // Move backward and turn right
+                else if (strcmp(param, "rightBack") == 0) {
+                    WheelAct(LOW, reverse_speed, LOW, reverse_speed); // Move backward
+                    delay(15);
+                    WheelAct(LOW, turn_speed, turn_speed, LOW); // Turn right
+                    delay(100);
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                } 
+                // Move backward, turn left at high speed
+                else if (strcmp(param, "TurnLeftBack") == 0) {
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                    delay(200);
+                    WheelAct(LOW, reverse_speed, LOW, reverse_speed); // Move backward
+                    delay(200);
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                    delay(200);
+                    WheelAct(high_speed, LOW, LOW, high_speed); // Turn left at high speed
+                    delay(600);
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                } 
+                // Move backward, turn right at high speed
+                else if (strcmp(param, "TurnRightBack") == 0) {
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                    delay(200);
+                    WheelAct(LOW, reverse_speed, LOW, reverse_speed); // Move backward
+                    delay(200);
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                    delay(200);
+                    WheelAct(LOW, high_speed, high_speed, LOW); // Turn right at high speed
+                    delay(600);
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                }  
+                // Move backward
+                else if (strcmp(param, "back") == 0) {
+                    WheelAct(LOW, reverse_speed, LOW, reverse_speed); // Move backward
+                    delay(175);
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                } 
+                // Move backward at high speed(cross intersection)
+                else if (strcmp(param, "crossBack") == 0) {
+                    WheelAct(LOW, high_speed, LOW, high_speed); // Move backward at high speed
+                    delay(200);
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                    delay(200);
+                }
+            }
+        }
+        free(buf);
+    }
+    // Record the end time
+    uint32_t endTime = millis();
+
+    // Calculate the time taken to handle the request
+    uint32_t elapsedTime = endTime - startTime;
+
+    // Convert the time to a string
+    char timeStr[10];
+    sprintf(timeStr, "%lu", elapsedTime);
+
+    // Set the response type to text/html
+    httpd_resp_set_type(req, "text/html");
+
+    // Send the time taken as the response
+    return httpd_resp_send(req, timeStr, strlen(timeStr));
+}
+
+/*
 static esp_err_t go_handler(httpd_req_t *req){
     WheelAct(regular_speed, LOW, regular_speed, LOW);
     Serial.println("Go");
@@ -310,10 +457,27 @@ static esp_err_t go_handler(httpd_req_t *req){
     httpd_resp_set_type(req, "text/html");
     return httpd_resp_send(req, "OK", 2);
 }
+static esp_err_t back_handler(httpd_req_t *req)
+{
+    WheelAct(LOW, regular_speed, LOW, regular_speed);
+    Serial.println("Back");
+    httpd_resp_set_type(req, "text/html");
+    return httpd_resp_send(req, "OK", 2);
+}
 
 static esp_err_t cross_handler(httpd_req_t *req){
     WheelAct(high_speed, LOW, high_speed, LOW);
     Serial.println("Go cross");
+    delay(200);
+    WheelAct(LOW, LOW, LOW, LOW);
+    Serial.println("Stop");
+    delay(200);
+    httpd_resp_set_type(req, "text/html");
+    return httpd_resp_send(req, "OK", 2);
+}
+static esp_err_t crossBack_handler(httpd_req_t *req){
+    WheelAct(LOW, high_speed, LOW, high_speed);
+    Serial.println("back cross");
     delay(200);
     WheelAct(LOW, LOW, LOW, LOW);
     Serial.println("Stop");
@@ -350,6 +514,26 @@ static esp_err_t turnLeft_handler(httpd_req_t *req){
   return httpd_resp_send(req, "OK", 2);
 }
 
+static esp_err_t LeftBack_handler(httpd_req_t *req){
+  WheelAct(LOW, LOW, LOW, LOW);
+  Serial.println("Stop");
+  delay(200);
+  WheelAct(high_speed, LOW, LOW, high_speed);
+  Serial.println("Left high");
+  delay(600);
+  WheelAct(LOW, LOW, LOW, LOW);
+  Serial.println("Stop");
+  delay(200);
+  WheelAct(LOW, regular_speed, LOW, regular_speed);
+  Serial.println("back");
+  delay(200);
+  WheelAct(LOW, LOW, LOW, LOW);
+  Serial.println("Stop");
+  httpd_resp_set_type(req, "text/html");
+  return httpd_resp_send(req, "OK", 2);
+}
+
+
 static esp_err_t right_handler(httpd_req_t *req){
     WheelAct(LOW, turn_speed, turn_speed, LOW);
     Serial.println("Right");
@@ -385,10 +569,17 @@ static esp_err_t stop_handler(httpd_req_t *req){
     httpd_resp_set_type(req, "text/html");
     return httpd_resp_send(req, "OK", 2);
 }
-
+*/
 void startCameraServer(){
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
+    httpd_uri_t action_uri = {
+        .uri       = "/action_handler",
+        .method    = HTTP_GET,
+        .handler   = action_handler,
+        .user_ctx  = NULL
+    };
+    /*
     httpd_uri_t go_uri = {
         .uri       = "/go",
         .method    = HTTP_GET,
@@ -396,12 +587,26 @@ void startCameraServer(){
         .user_ctx  = NULL
     };
 
+    httpd_uri_t back_uri = {
+    .uri = "/back",
+    .method = HTTP_GET,
+    .handler = back_handler,
+    .user_ctx = NULL};
+
     httpd_uri_t cross_uri = {
         .uri       = "/cross",
         .method    = HTTP_GET,
         .handler   = cross_handler,
         .user_ctx  = NULL
     };
+
+    httpd_uri_t crossBack_uri = {
+        .uri       = "/crossback",
+        .method    = HTTP_GET,
+        .handler   = crossBack_handler,
+        .user_ctx  = NULL
+    };
+
 
     httpd_uri_t stop_uri = {
         .uri       = "/stop",
@@ -416,6 +621,13 @@ void startCameraServer(){
         .handler   = left_handler,
         .user_ctx  = NULL
     };
+    httpd_uri_t LeftBack_uri = {
+        .uri       = "/Leftback",
+        .method    = HTTP_GET,
+        .handler   = LeftBack_handler,
+        .user_ctx  = NULL
+    };
+
     
     httpd_uri_t right_uri = {
         .uri       = "/right",
@@ -437,7 +649,7 @@ void startCameraServer(){
         .handler   = turnRight_handler,
         .user_ctx  = NULL
     };
-
+*/
     httpd_uri_t status_uri = {
         .uri       = "/status",
         .method    = HTTP_GET,
@@ -471,6 +683,11 @@ void startCameraServer(){
     Serial.printf("Starting web server on port: '%d'", config.server_port);
     esp_err_t err;
     if (httpd_start(&camera_httpd, &config) == ESP_OK) {
+      err = httpd_register_uri_handler(camera_httpd, &action_uri);
+        if (err != ESP_OK) {
+        Serial.printf("Failed to register handler for /action: %d\n", err);
+      }
+      /*
         httpd_register_uri_handler(camera_httpd, &go_uri); 
         httpd_register_uri_handler(camera_httpd, &stop_uri); 
         httpd_register_uri_handler(camera_httpd, &left_uri);
@@ -489,6 +706,19 @@ void startCameraServer(){
     if (err != ESP_OK) {
       Serial.printf("Failed to register handler for /cross: %d\n", err);
     }
+    err =  httpd_register_uri_handler(camera_httpd, &back_uri);
+      if (err != ESP_OK) {
+      Serial.printf("Failed to register handler for /back: %d\n", err);
+    }
+    err = httpd_register_uri_handler(camera_httpd, &crossBack_uri);
+    if (err != ESP_OK) {
+      Serial.printf("Failed to register handler for /crossback: %d\n", err);
+    }
+    err = httpd_register_uri_handler(camera_httpd, &LeftBack_uri);
+    if (err != ESP_OK) {
+      Serial.printf("Failed to register handler for /crossback: %d\n", err);
+    }
+    */
     }
 
     config.server_port += 1;
