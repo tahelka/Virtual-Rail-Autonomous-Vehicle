@@ -2,6 +2,7 @@ from time import sleep
 import cv2
 import urllib.request
 import numpy as np
+from collections import deque
 
 kernel = np.ones((5, 5), np.uint8)
 stream_url = 'http://10.0.0.15:81/stream'
@@ -20,9 +21,14 @@ BACK = "back"
 TURN_LEFT = "turnLeft"
 TURN_RIGHT = "turnRight"
 CROSS = "cross"
+Left_back = "leftBack"
+Right_back = "rightBack"
+TURN_LEFT_back = "TurnLeftBack"
+TURN_RIGHT_back = "TurnRightBack"
+CROSS_back = "crossBack"
 
 # Commands to send
-commands = [GO, LEFT, RIGHT, STOP, CROSS, BACK, TURN_LEFT, TURN_RIGHT]
+commands = [GO, LEFT, RIGHT, STOP, CROSS, BACK, TURN_LEFT, TURN_RIGHT, Left_back , Right_back, TURN_LEFT_back, TURN_RIGHT_back, CROSS_back]
 
 def update_value(x):
     pass
@@ -114,17 +120,34 @@ def show_frames(binary_thresh, frame):
 # Function to send commands to the ESP32 server
 def send_command(command):
     try:
-        url = f'http://{esp32_ip}:{esp32_port}/{command}'
+        url = f'http://{esp32_ip}:{esp32_port}/action_handler?action={command}'
         response = urllib.request.urlopen(url)
         response_data = response.read().decode()
-        if response_data.strip() == "OK":
-            print(f"{command} command sent successfully.")
-            return command  # Return the command sent
-        else:
+        # Check if the response contains the time
+        try:
+            time_taken = int(response_data)
+            print(f"{command} command sent successfully. Time taken to complete {time_taken} ms")
+        except ValueError:
             print(f"Error: {response_data}")
+        return command  # Return the command sent
     except urllib.error.URLError as e:
         print(f"Error sending {command} command: {e}")
-    return None  # Return None if no command was sent
+        return None  # Return None if no command was sent
+
+def opposite_command(command):
+    if command == GO:
+        return BACK
+    if command == LEFT:
+        return Right_back
+    elif command == RIGHT:
+        return Left_back
+    elif command == TURN_LEFT:
+        return TURN_RIGHT_back
+    elif command == TURN_RIGHT:
+        return TURN_LEFT_back
+    elif command == CROSS:
+        return CROSS_back
+    return command
 
 def main():
     stream = urllib.request.urlopen(stream_url)
@@ -132,8 +155,9 @@ def main():
     frame_counter = 0  # Initialize a frame counter
     command_interval = 7  # Send command every 7 frames
     send_commands = True  # Initialize the flag to True
-    previous_command = "no command"  # Initialize the previous command to "no command"
     previous_marker = -1
+    # Initialize the command queue
+    command_queue = deque(maxlen=50)
     while True:
         try:
             jpg, bytes = get_stream_bytes(stream, bytes)
@@ -165,6 +189,12 @@ def main():
                                 command_sent = CROSS
                             elif id_of_marker[0] == 6:
                                 command_sent = TURN_LEFT
+                            elif id_of_marker[0] == 7:
+                                command_sent = TURN_RIGHT
+                            elif id_of_marker[0] == 8:
+                                command_sent = TURN_RIGHT
+                            elif id_of_marker[0] == 9:
+                                command_sent = TURN_LEFT
 
                             # Check if the current marker is the same as the previous marker
                             if previous_marker == id_of_marker[0]:
@@ -176,8 +206,8 @@ def main():
                                 #sleep(0.5)
                                 previous_marker = id_of_marker[0]
 
-                                
                 elif frame_counter == command_interval and id_of_marker is None:  # If the counter reaches the command interval
+                    previous_marker = -1  # Reset the previous marker
                     if send_commands:  # Only send commands if the flag is True
                         if id_of_marker is None and foundContour == True:
                             if offset < -50:
@@ -186,13 +216,21 @@ def main():
                                 command_sent = send_command(RIGHT)
                             else:
                                command_sent = send_command(GO)
-                        elif id_of_marker is None and foundContour == False:
-                            command_sent = send_command(STOP)
+                        elif id_of_marker is None and foundContour == False: # If the flag is False, start backtracking
+                                command_sent = None
+                                send_command(opposite_command(command_queue.pop()))
+                                send_command(STOP)
                         #sleep(0.5)
-                    else:  # If the flag is False, send the STOP command
+                    else:  #emergency stop
                         command_sent = send_command(STOP)
                 if frame_counter >= command_interval:
                     frame_counter = 0
+                # Inside your main loop, after a command is sent:
+                
+                if command_sent is not None and command_sent != STOP:
+                    # Add the command to the start of the queue
+                    command_queue.appendleft(command_sent)
+
                 # Reset the last_turn_command if the current command if no marker is detected  
                 # Draw the command sent on the frame
                 #command_text = f"Command: {command_sent if command_sent else 'No new command'}"
