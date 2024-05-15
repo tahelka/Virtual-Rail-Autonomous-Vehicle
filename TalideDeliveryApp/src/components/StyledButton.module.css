@@ -11,8 +11,14 @@
     background-color: transparent;
 }
 
+.button.smallButton {
+    padding: 2px 5px;
+    font-size: 5px !important;
+    width: auto !important;
+}
+
 .button:hover {
-    background-color: pink;
+    background-color: rgb(198, 216, 230);
 }
   
 .buttonText {
@@ -29,15 +35,16 @@
 }
  
 .buttonItem {
-    width: 60%;
+    width: 100%;
     padding: 1rem;
     cursor: pointer;
-    background: #c6baba;
+    background: #e6d9d9;
     border-radius: 9px;
     border-bottom: 1px solid whitesmoke;
     text-align: center;
 }
   
 .buttonItem:hover {
-    background-color: pink;
+    background-color: rgb(198, 216, 230);
 }
+
