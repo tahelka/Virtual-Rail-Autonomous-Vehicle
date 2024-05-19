@@ -5,7 +5,7 @@ import numpy as np
 from collections import deque
 
 kernel = np.ones((5, 5), np.uint8)
-stream_url = 'http://10.0.0.15:81/stream'
+stream_url = 'http://18.0.5.15:81/stream' #change to the correct ip
 cv2.namedWindow('settings', cv2.WINDOW_AUTOSIZE)
 bottom_percentage = 60 / 100
 # ESP32 server IP address and port
