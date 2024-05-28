@@ -45,7 +45,6 @@ const MapManagement = () => {
       </div>
       <div className={styles.existingMaps}>
         <h1 style={{ color: 'rgb(160, 198, 227)', textAlign: 'center', textShadow: '2px 2px 2px black' }}>Maps</h1>
-        <StyledButton className="button smallButton">CREATE NEW MAP</StyledButton>
         <MapCreator addNewMap={addNewMap} />
       </div>
     </div>

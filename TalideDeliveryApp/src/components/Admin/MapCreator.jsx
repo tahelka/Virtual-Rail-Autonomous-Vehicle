@@ -168,7 +168,7 @@ const DrawMap = ({ size, onSave }) => {
           {isDrawing && <Line points={currentLine} stroke="black" strokeWidth={2} />}
         </Layer>
       </Stage>
-      <button onClick={handleSave} className="save-button">Save Map</button>
+      <button onClick={handleSave} className="choiceButton">Save Map</button>
     </div>
   );
 };
@@ -218,7 +218,7 @@ const MapCreator = ({ addNewMap }) => {
             Grid Size:
             <input type="number" value={gridSize} onChange={handleGridSizeChange} />
           </label>
-          <button onClick={handleSetGridSize}>Set Grid Size</button>
+          <button onClick={handleSetGridSize} className="choiceButton">Create New Map</button>
         </div>
       ) : (
         <DrawMap size={mapGridSize} onSave={handleSaveMap} />
