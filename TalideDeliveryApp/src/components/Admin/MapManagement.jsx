@@ -38,13 +38,14 @@ const MapManagement = () => {
   return (
     <div className={styles.MapManagement}>
       <div className={styles.mapAdministrater}>
-        <h1>Map Name</h1>
+        {/*<h1>Map Name</h1>*/}
+        <MapViewer maps={maps} onDeleteMap={handleDeleteMap} />
         <div className={styles.mapDisplay}>
-          <MapViewer maps={maps} onDeleteMap={handleDeleteMap} />
+          
         </div>
       </div>
-      <div className={styles.existingMaps}>
-        <h1 style={{ color: 'rgb(160, 198, 227)', textAlign: 'center', textShadow: '2px 2px 2px black' }}>Maps</h1>
+      <div className={styles.mapCreator}>
+        {/*<h1 style={{ color: 'rgb(160, 198, 227)', textAlign: 'center', textShadow: '2px 2px 2px black' }}>Maps</h1>*/}
         <MapCreator addNewMap={addNewMap} />
       </div>
     </div>

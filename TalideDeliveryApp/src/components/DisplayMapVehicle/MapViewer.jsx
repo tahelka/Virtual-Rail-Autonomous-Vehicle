@@ -34,7 +34,7 @@ const MapViewer = ({ maps, onDeleteMap }) => {
       </select>
       {selectedMapIndex !== null && maps[selectedMapIndex] && (
         <div>
-          <h3>Map {selectedMapIndex + 1}</h3>
+          {/*<h3>Map {selectedMapIndex + 1}</h3>*/}
           <button onClick={() => handleDeleteMap(maps[selectedMapIndex].id)}>Delete Map</button>
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(${maps[selectedMapIndex].gridSize}, 20px)` }}>
             {Array.from({ length: maps[selectedMapIndex].gridSize * maps[selectedMapIndex].gridSize }).map((_, idx) => {
