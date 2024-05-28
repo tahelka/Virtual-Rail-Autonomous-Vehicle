@@ -7,13 +7,7 @@ import axios from 'axios';
 import MapCreator from './MapCreator';
 import MapViewer from '../DisplayMapVehicle/MapViewer';
 
-const existingMaps = [
-  { id: 1, name: "Map 1" },
-  { id: 2, name: "Map 2" },
-  { id: 3, name: "Map 3" },
-];
-
-const MapManagement = ({ children }) => {
+const MapManagement = () => {
   const [maps, setMaps] = useState([]);
 
   useEffect(() => {
@@ -44,31 +38,20 @@ const MapManagement = ({ children }) => {
   return (
     <div className={styles.MapManagement}>
       <div className={styles.mapAdministrater}>
-        <h1>Map Name</h1>
+        {/*<h1>Map Name</h1>*/}
+        <MapViewer maps={maps} onDeleteMap={handleDeleteMap} />
         <div className={styles.mapDisplay}>
-          <MapViewer maps={maps} onDeleteMap={handleDeleteMap} />
+          
         </div>
       </div>
-      <div className={styles.existingMaps}>
-        <h1 style={{ color: 'rgb(160, 198, 227)', textAlign: 'center', textShadow: '2px 2px 2px black' }}>Maps</h1>
-        {
-        /* 
-        {maps.map((map) => (
-          <div key={map.id} className={styles.mapItem}>
-            <MapViewer name={map.name} />
-          </div>
-        ))}
-        */
-}
-        <StyledButton className="button smallButton">CREATE NEW MAP</StyledButton>
+      <div className={styles.mapCreator}>
+        {/*<h1 style={{ color: 'rgb(160, 198, 227)', textAlign: 'center', textShadow: '2px 2px 2px black' }}>Maps</h1>*/}
         <MapCreator addNewMap={addNewMap} />
       </div>
     </div>
   );
 };
 
-MapManagement.propTypes = {
-  children: PropTypes.node,
-};
+MapManagement.propTypes = {};
 
 export default MapManagement;

@@ -11,19 +11,19 @@
     width: 65%;
   }
   
-  
   .mapDisplay {
     aspect-ratio: 1 / 1;
     border: 2px solid black;
     width: 85%;
   }
   
-  .existingMaps {
+  .mapCreator {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 10px;
-  }
+}
   
   .mapItem {
     display: flex;
@@ -32,6 +32,5 @@
     width: 100%;
     aspect-ratio: 1 / 1;
     border: 2px solid black;
-
   }
   

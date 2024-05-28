@@ -12,7 +12,8 @@ const DropDownButton = ({children, open, toggle}) => {
         <span className={buttonStyles.buttonText}>{children}</span>
         <span onClick={toggle} className={styles.toggleIcon}>{open ? <FaChevronUp /> : <FaChevronDown />}</span>
         </button>
-    );
+       
+    );  
 };
 
 DropDownButton.propTypes = {
