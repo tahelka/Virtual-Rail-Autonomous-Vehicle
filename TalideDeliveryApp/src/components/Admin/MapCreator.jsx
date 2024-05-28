@@ -215,7 +215,7 @@ const MapCreator = ({ addNewMap }) => {
       {mapGridSize === null ? (
         <div>
           <label>
-            Grid Size:
+            Map Size:
             <input type="number" value={gridSize} onChange={handleGridSizeChange} />
           </label>
           <button onClick={handleSetGridSize} className="choiceButton">Create New Map</button>

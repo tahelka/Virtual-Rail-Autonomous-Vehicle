@@ -26,7 +26,6 @@ const MapViewer = ({ maps, onDeleteMap }) => {
 
   return (
     <div>
-      <h2>Saved Maps:</h2>
       <select onChange={handleSelectMap} value={selectedMapIndex !== null ? selectedMapIndex : ''}>
         <option value="" disabled>Select a map</option>
         {maps.map((map, index) => (
