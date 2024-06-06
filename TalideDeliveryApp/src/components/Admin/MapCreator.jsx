@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import DrawMap from './DrawMap';
-import './RoadMap.css';
+import './RoadMap.module.css';
 
 const MapCreator = ({ addNewMap }) => {
   const [gridSize, setGridSize] = useState(0);
