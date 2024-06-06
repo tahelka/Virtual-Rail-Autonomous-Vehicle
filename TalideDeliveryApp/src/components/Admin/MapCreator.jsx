@@ -1,9 +1,8 @@
 /* eslint-disable no-unused-vars */
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import axios from 'axios';
 import DrawMap from './DrawMap';
-import './RoadMap.css';
+import './RoadMap.module.css';
 
 const MapCreator = ({ addNewMap }) => {
   const [gridSize, setGridSize] = useState(0);
@@ -37,6 +36,11 @@ const MapCreator = ({ addNewMap }) => {
     }
   };
 
+  const handleCancel = () => {
+    setMapGridSize(null);
+    setError(null);
+  };
+
   return (
     <div>
       {mapGridSize === null ? (
@@ -45,10 +49,10 @@ const MapCreator = ({ addNewMap }) => {
             Grid Size:
             <input type="number" value={gridSize} onChange={handleGridSizeChange} />
           </label>
-          <button onClick={handleSetGridSize} className = 'choiceButton'>Set Grid Size</button>
+          <button onClick={handleSetGridSize} className='choiceButton'>Set Grid Size</button>
         </div>
       ) : (
-        <DrawMap size={mapGridSize} onSave={handleSaveMap} />
+        <DrawMap size={mapGridSize} onSave={handleSaveMap} onCancel={handleCancel} />
       )}
       {error && <div style={{ color: 'red' }}>{error}</div>}
     </div>

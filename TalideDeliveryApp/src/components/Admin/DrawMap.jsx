@@ -2,9 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Stage, Layer, Circle, Line } from 'react-konva';
-import './RoadMap.css';
+import './RoadMap.module.css';
+import styles from './DrawMap.module.css';
 
-const DrawMap = ({ size, onSave }) => {
+const DrawMap = ({ size, onSave, onCancel}) => {
   const [nodes, setNodes] = useState([]);
   const [lines, setLines] = useState([]);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -184,7 +185,11 @@ const DrawMap = ({ size, onSave }) => {
           {isDrawing && <Line points={currentLine} stroke="black" strokeWidth={2} />}
         </Layer>
       </Stage>
-      <button onClick={handleSave} className = 'choiceButton'>Save Map</button>
+      <div className= {styles.buttonContainer}>
+        <button onClick={handleSave} className = {styles.choiceButton}>Save Map</button>
+        <button onClick={onCancel} className={styles.choiceButton}>Cancel</button>
+        </div>
+      
     </div>
   );
 };
@@ -192,6 +197,7 @@ const DrawMap = ({ size, onSave }) => {
 DrawMap.propTypes = {
   size: PropTypes.number.isRequired,
   onSave: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
 };
 
 export default DrawMap;
