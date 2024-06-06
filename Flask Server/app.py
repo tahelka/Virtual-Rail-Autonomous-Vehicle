@@ -1,10 +1,15 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
 from graph import Graph
 from health import health_check
 import time
 import threading
+import os
+import uuid
+import json
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 # Global variable to store the calculated path
 calculated_path = None
@@ -13,7 +18,6 @@ def execute_code():
     while(True):
         print("Executing code...")
         time.sleep(1)
-
 
 @app.route('/graph', methods=['POST'])
 def receive_graph():
@@ -65,6 +69,45 @@ def get_calculated_path():
         return jsonify({"message": "No path calculated yet"}), 404
 
 app.add_url_rule('/health', view_func=health_check)
+
+# Define the folder for storing map files
+MAPS_FOLDER = 'maps'
+if not os.path.exists(MAPS_FOLDER):
+    os.makedirs(MAPS_FOLDER)
+app.config['MAPS_FOLDER'] = MAPS_FOLDER
+
+@app.route('/api/maps/save', methods=['POST'])
+def save_map():
+    try:
+        map_data = request.json.get('mapData')
+        map_name = f'map_{uuid.uuid4()}.json'
+        file_path = os.path.join(app.config['MAPS_FOLDER'], map_name)
+        
+        # Save the map data with proper formatting
+        with open(file_path, 'w') as file:
+            file.write(map_data)
+        
+        return jsonify({"message": "Map saved successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route('/api/maps/delete/<map_id>', methods=['DELETE'])
+def delete_map(map_id):
+    try:
+        file_name = f'map_{map_id}.json'
+        file_path = os.path.join(app.config['MAPS_FOLDER'], file_name)
+        
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            return jsonify({"message": "Map deleted successfully"}), 200
+        else:
+            return jsonify({"message": "Map not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route('/download/<path:filename>', methods=['GET'])
+def download_map(filename):
+    return send_from_directory(app.config['MAPS_FOLDER'], filename, as_attachment=True)
 
 if __name__ == '__main__':
     from config import DEFAULT_PORT

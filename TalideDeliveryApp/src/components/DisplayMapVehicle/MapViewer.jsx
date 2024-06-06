@@ -1,9 +1,11 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import axios from 'axios';
 
 const MapViewer = ({ maps, onDeleteMap }) => {
   const [selectedMapIndex, setSelectedMapIndex] = useState(null);
+  const [mapsFiles, setMaps] = useState([]);
 
   useEffect(() => {
     if (selectedMapIndex !== null && selectedMapIndex >= maps.length) {
@@ -17,12 +19,28 @@ const MapViewer = ({ maps, onDeleteMap }) => {
 
   const handleDeleteMap = async (id) => {
     try {
+      await axios.delete(`http://localhost:5000/api/maps/delete/${id}`);
+      setMaps(mapsFiles.filter(map => map.id !== id));
+    } catch (error) {
+      console.error('Error deleting map:', error);
+    }
+  };
+
+  const API_ENDPOINTS = {
+    SAVE_MAP: 'http://localhost:5000/api/maps/save',
+    DELETE_MAP: 'http://localhost:5000/api/maps/delete',
+  };
+
+  /*
+  const handleDeleteMap = async (id) => {
+    try {
       await onDeleteMap(id);
       setSelectedMapIndex(null);
     } catch (error) {
       console.error('Error deleting map:', error);
     }
   };
+  */
 
   return (
     <div>
