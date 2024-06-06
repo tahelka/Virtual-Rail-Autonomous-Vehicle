@@ -2,7 +2,9 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import DrawMap from './DrawMap';
+import axios from 'axios';
 import './RoadMap.module.css';
+
 
 const MapCreator = ({ addNewMap }) => {
   const [gridSize, setGridSize] = useState(0);
@@ -17,6 +19,21 @@ const MapCreator = ({ addNewMap }) => {
     setMapGridSize(gridSize);
   };
 
+  const handleSaveMap = async (graph) => {
+    try {
+      const mapData = JSON.stringify(graph, null, 2); // 2 spaces for indentation
+      const response = await axios.post('http://localhost:5000/api/maps/save', { mapData });
+      addNewMap(response.data);
+      setMapGridSize(null);
+      setError(null);
+    } catch (error) {
+      console.error('Error saving map:', error);
+      setError('Failed to save map');
+    }
+  };
+  
+
+  /*
   const handleSaveMap = (graph) => {
     try {
       const json = JSON.stringify(graph, null, 2);
@@ -35,6 +52,7 @@ const MapCreator = ({ addNewMap }) => {
       setError('Failed to save map');
     }
   };
+  */
 
   const handleCancel = () => {
     setMapGridSize(null);
