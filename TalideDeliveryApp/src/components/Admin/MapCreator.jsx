@@ -5,7 +5,6 @@ import DrawMap from './DrawMap';
 import axios from 'axios';
 import './RoadMap.module.css';
 
-
 const MapCreator = ({ addNewMap }) => {
   const [gridSize, setGridSize] = useState(0);
   const [mapGridSize, setMapGridSize] = useState(null);
@@ -23,7 +22,7 @@ const MapCreator = ({ addNewMap }) => {
     try {
       const mapData = JSON.stringify(graph, null, 2); // 2 spaces for indentation
       const response = await axios.post('http://localhost:5000/api/maps/save', { mapData });
-      addNewMap(response.data);
+      addNewMap({ ...graph, id: response.data.id });
       setMapGridSize(null);
       setError(null);
     } catch (error) {
@@ -31,28 +30,6 @@ const MapCreator = ({ addNewMap }) => {
       setError('Failed to save map');
     }
   };
-  
-
-  /*
-  const handleSaveMap = (graph) => {
-    try {
-      const json = JSON.stringify(graph, null, 2);
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'map.json';
-      link.click();
-      URL.revokeObjectURL(url);
-      addNewMap(graph);
-      setMapGridSize(null);
-      setError(null);
-    } catch (error) {
-      console.error('Error saving map:', error);
-      setError('Failed to save map');
-    }
-  };
-  */
 
   const handleCancel = () => {
     setMapGridSize(null);

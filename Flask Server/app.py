@@ -87,7 +87,7 @@ def save_map():
         with open(file_path, 'w') as file:
             file.write(map_data)
         
-        return jsonify({"message": "Map saved successfully"}), 200
+        return jsonify({"message": "Map saved successfully", "id": map_name.split('_')[1].split('.')[0]}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
@@ -102,6 +102,21 @@ def delete_map(map_id):
             return jsonify({"message": "Map deleted successfully"}), 200
         else:
             return jsonify({"message": "Map not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+    
+@app.route('/api/maps', methods=['GET'])
+def list_maps():
+    try:
+        map_files = os.listdir(app.config['MAPS_FOLDER'])
+        maps = []
+        for file_name in map_files:
+            if file_name.endswith('.json'):
+                map_id = file_name.split('_')[1].split('.')[0]
+                with open(os.path.join(app.config['MAPS_FOLDER'], file_name), 'r') as file:
+                    map_data = json.load(file)
+                    maps.append({"id": map_id, "data": map_data})
+        return jsonify(maps), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
