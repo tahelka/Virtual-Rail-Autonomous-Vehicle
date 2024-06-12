@@ -5,18 +5,26 @@ import styles from "./MapManagement.module.css";
 import axios from 'axios';
 import MapCreator from './MapCreator';
 import MapViewer from '../DisplayMapVehicle/MapViewer';
+import DrawMapFromJson from '../DisplayMapVehicle/DrawMapFromJson';
 
 const MapManagement = () => {
   const [maps, setMaps] = useState([]);
+  const [selectedMapJson, setSelectedMapJson] = useState(null);
 
   const fetchMaps = async () => {
     try {
       const response = await axios.get('http://localhost:5000/api/maps');
       setMaps(response.data);
+      if (response.data.length > 0) {
+        const firstMapId = response.data[0].id; // Assuming each map object has an 'id' property
+        const jsonUrl = `http://localhost:5000/download/map_${firstMapId}.json`; // Construct the URL to download the JSON file
+        const jsonResp = await axios.get(jsonUrl);
+        setSelectedMapJson(JSON.stringify(jsonResp.data)); // Set the first map's JSON data by default
+      }
     } catch (error) {
       console.error('Error fetching maps:', error);
     }
-  };
+  };  
 
   useEffect(() => {
     fetchMaps();
@@ -41,7 +49,13 @@ const MapManagement = () => {
     <div className={styles.MapManagement}>
       <div className={styles.mapAdministrater}>
         <MapViewer maps={maps} onDeleteMap={handleDeleteMap} />
-        <div className={styles.mapDisplay}></div>
+        <div className={styles.mapDisplay}>
+          {selectedMapJson ? (
+            <DrawMapFromJson jsonData={selectedMapJson} />
+          ) : (
+            <p>No map selected</p>
+          )}
+        </div>
       </div>
       <div className={styles.mapCreator}>
         <MapCreator addNewMap={addNewMap} />
