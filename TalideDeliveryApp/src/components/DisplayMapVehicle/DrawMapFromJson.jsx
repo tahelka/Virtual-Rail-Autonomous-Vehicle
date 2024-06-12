@@ -15,8 +15,15 @@ const DrawMapFromJson = ({ jsonData, onCancel }) => {
       const newNodes = [];
       const newLines = [];
 
-      parsedData.forEach(node => {
-        newNodes.push({ id: node.id, x: node.x, y: node.y });
+      // Assuming the number of nodes is a perfect square (e.g., 64)
+      const gridSize = Math.sqrt(parsedData.length);
+
+      parsedData.forEach((node, index) => {
+        const row = Math.floor(index / gridSize);
+        const col = index % gridSize;
+        const x = col * 50 + 50; // Adjust node spacing and position as needed
+        const y = row * 50 + 50; // Adjust node spacing and position as needed
+        newNodes.push({ id: node.id, x, y });
 
         node.edges.forEach(edge => {
           const startNode = node.id;
