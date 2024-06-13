@@ -1,13 +1,10 @@
-// DrawMapFromJson.js
 /* eslint-disable no-unused-vars */
-// DrawMapFromJson.js
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Stage, Layer, Circle, Line } from 'react-konva';
-import '../Admin/RoadMap.module.css';
 import styles from '../Admin/DrawMap.module.css';
 
-const DrawMapFromJson = ({ jsonData, onCancel }) => {
+const DrawMapFromJson = ({ jsonData, isEditable = false, onSave, onCancel }) => {
   const [nodes, setNodes] = useState([]);
   const [lines, setLines] = useState([]);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -21,15 +18,14 @@ const DrawMapFromJson = ({ jsonData, onCancel }) => {
       const newLines = [];
       const newNodeMap = {};
 
-      // Assuming the number of nodes is a perfect square (e.g., 64)
       const gridSize = Math.sqrt(parsedData.length);
       const offset = 50;
 
       parsedData.forEach((node, index) => {
         const row = Math.floor(index / gridSize);
         const col = index % gridSize;
-        const x = col * offset + offset; // Adjust node spacing and position as needed
-        const y = row * offset + offset; // Adjust node spacing and position as needed
+        const x = col * offset + offset;
+        const y = row * offset + offset;
         newNodes.push({ id: node.id, x, y });
         newNodeMap[`${x}-${y}`] = node.id;
 
@@ -50,6 +46,7 @@ const DrawMapFromJson = ({ jsonData, onCancel }) => {
   }, [jsonData]);
 
   const handleMouseDown = (e) => {
+    if (!isEditable) return;
     const { x, y } = e.target.getStage().getPointerPosition();
     const nearestNode = findNearestNode(x, y);
     if (nearestNode) {
@@ -59,7 +56,7 @@ const DrawMapFromJson = ({ jsonData, onCancel }) => {
   };
 
   const handleMouseMove = (e) => {
-    if (!isDrawing) return;
+    if (!isEditable || !isDrawing) return;
 
     const { x, y } = e.target.getStage().getPointerPosition();
     const { x: startX, y: startY } = {
@@ -78,7 +75,7 @@ const DrawMapFromJson = ({ jsonData, onCancel }) => {
   };
 
   const handleMouseUp = (e) => {
-    if (!isDrawing) return;
+    if (!isEditable || !isDrawing) return;
 
     const { x, y } = e.target.getStage().getPointerPosition();
     const nearestNode = findNearestNode(x, y);
@@ -210,17 +207,21 @@ const DrawMapFromJson = ({ jsonData, onCancel }) => {
           {isDrawing && <Line points={currentLine} stroke="black" strokeWidth={2} />}
         </Layer>
       </Stage>
-      <div className={styles.buttonContainer}>
-        <button onClick={handleSave} className={styles.choiceButton}>Save</button>
-        <button onClick={onCancel} className={styles.choiceButton}>Cancel</button>
-      </div>
+      {isEditable && (
+        <div className={styles.buttonContainer}>
+          <button onClick={handleSave} className={styles.choiceButton}>Save</button>
+          <button onClick={onCancel} className={styles.choiceButton}>Cancel</button>
+        </div>
+      )}
     </div>
   );
 };
 
 DrawMapFromJson.propTypes = {
   jsonData: PropTypes.string.isRequired,
-  onCancel: PropTypes.func.isRequired,
+  isEditable: PropTypes.bool,
+  onSave: PropTypes.func,
+  onCancel: PropTypes.func,
 };
 
 export default DrawMapFromJson;
