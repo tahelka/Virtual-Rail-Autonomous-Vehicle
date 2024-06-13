@@ -113,9 +113,15 @@ def list_maps():
         for file_name in map_files:
             if file_name.endswith('.json'):
                 map_id = file_name.split('_')[1].split('.')[0]
-                with open(os.path.join(app.config['MAPS_FOLDER'], file_name), 'r') as file:
+                file_path = os.path.join(app.config['MAPS_FOLDER'], file_name)
+                creation_time = os.path.getctime(file_path)  # Get the creation time
+                with open(file_path, 'r') as file:
                     map_data = json.load(file)
-                    maps.append({"id": map_id, "data": map_data})
+                    maps.append({"id": map_id, "data": map_data, "creation_time": creation_time})
+        
+        # Sort maps by creation time
+        maps.sort(key=lambda x: x['creation_time'])
+        
         return jsonify(maps), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400

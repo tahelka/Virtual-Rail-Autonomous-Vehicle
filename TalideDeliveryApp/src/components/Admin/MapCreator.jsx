@@ -5,25 +5,15 @@ import DrawMap from './DrawMap';
 import axios from 'axios';
 import './RoadMap.module.css';
 
-const MapCreator = ({ addNewMap }) => {
-  const [gridSize, setGridSize] = useState(0);
-  const [mapGridSize, setMapGridSize] = useState(null);
+const MapCreator = ({ addNewMap, onCancel, gridSize }) => {
+  const [mapGridSize, setMapGridSize] = useState(gridSize);
   const [error, setError] = useState(null);
-
-  const handleGridSizeChange = (event) => {
-    setGridSize(Number(event.target.value));
-  };
-
-  const handleSetGridSize = () => {
-    setMapGridSize(gridSize);
-  };
 
   const handleSaveMap = async (graph) => {
     try {
       const mapData = JSON.stringify(graph, null, 2); // 2 spaces for indentation
       const response = await axios.post('http://localhost:5000/api/maps/save', { mapData });
       addNewMap({ ...graph, id: response.data.id });
-      setMapGridSize(null);
       setError(null);
     } catch (error) {
       console.error('Error saving map:', error);
@@ -32,23 +22,13 @@ const MapCreator = ({ addNewMap }) => {
   };
 
   const handleCancel = () => {
-    setMapGridSize(null);
     setError(null);
+    onCancel(); // Switch to view mode on cancel
   };
 
   return (
     <div>
-      {mapGridSize === null ? (
-        <div>
-          <label>
-            Grid Size:
-            <input type="number" value={gridSize} onChange={handleGridSizeChange} />
-          </label>
-          <button onClick={handleSetGridSize} className='choiceButton'>Set Grid Size</button>
-        </div>
-      ) : (
-        <DrawMap size={mapGridSize} onSave={handleSaveMap} onCancel={handleCancel} />
-      )}
+      <DrawMap size={mapGridSize} onSave={handleSaveMap} onCancel={handleCancel} />
       {error && <div style={{ color: 'red' }}>{error}</div>}
     </div>
   );
@@ -56,6 +36,8 @@ const MapCreator = ({ addNewMap }) => {
 
 MapCreator.propTypes = {
   addNewMap: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
+  gridSize: PropTypes.number.isRequired,
 };
 
 export default MapCreator;

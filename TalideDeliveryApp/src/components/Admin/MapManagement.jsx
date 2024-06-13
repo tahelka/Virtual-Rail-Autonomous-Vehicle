@@ -10,21 +10,35 @@ import DrawMapFromJson from '../DisplayMapVehicle/DrawMapFromJson';
 const MapManagement = () => {
   const [maps, setMaps] = useState([]);
   const [selectedMapJson, setSelectedMapJson] = useState(null);
+  const [mode, setMode] = useState('view'); // 'view' or 'create'
+  const [gridSize, setGridSize] = useState(2); // Default grid size to 2
 
   const fetchMaps = async () => {
     try {
       const response = await axios.get('http://localhost:5000/api/maps');
-      setMaps(response.data);
-      if (response.data.length > 0) {
-        const firstMapId = response.data[0].id; // Assuming each map object has an 'id' property
+      const sortedMaps = response.data.sort((a, b) => new Date(a.creation_time) - new Date(b.creation_time));
+      setMaps(sortedMaps);
+      if (sortedMaps.length > 0) {
+        const firstMapId = sortedMaps[0].id; // Oldest map
         const jsonUrl = `http://localhost:5000/download/map_${firstMapId}.json`; // Construct the URL to download the JSON file
         const jsonResp = await axios.get(jsonUrl);
-        setSelectedMapJson(JSON.stringify(jsonResp.data)); // Set the first map's JSON data by default
+        setSelectedMapJson(JSON.stringify(jsonResp.data)); // Set the oldest map's JSON data by default
       }
     } catch (error) {
       console.error('Error fetching maps:', error);
     }
-  };  
+  };
+
+  const fetchMapJsonByIndex = async (index) => {
+    try {
+      const mapId = maps[index].id;
+      const jsonUrl = `http://localhost:5000/download/map_${mapId}.json`;
+      const jsonResp = await axios.get(jsonUrl);
+      setSelectedMapJson(JSON.stringify(jsonResp.data));
+    } catch (error) {
+      console.error('Error fetching map JSON:', error);
+    }
+  };
 
   useEffect(() => {
     fetchMaps();
@@ -33,6 +47,7 @@ const MapManagement = () => {
   const addNewMap = (newMap) => {
     setMaps([...maps, newMap]);
     fetchMaps();
+    setMode('view'); // Switch to view mode after adding a new map
   };
 
   const handleDeleteMap = async (id) => {
@@ -45,21 +60,42 @@ const MapManagement = () => {
     }
   };
 
+  const handleSetGridSize = () => {
+    setMode('create');
+  };
+
+  const handleGridSizeChange = (event) => {
+    setGridSize(Number(event.target.value));
+  };
+
   return (
     <div className={styles.MapManagement}>
-      <div className={styles.mapAdministrater}>
-        <MapViewer maps={maps} onDeleteMap={handleDeleteMap} />
-        <div className={styles.mapDisplay}>
-          {selectedMapJson ? (
-            <DrawMapFromJson jsonData={selectedMapJson} />
-          ) : (
-            <p>No map selected</p>
-          )}
+      {mode === 'view' ? (
+        <div className={styles.mapAdministrater}>
+          <MapViewer maps={maps} onDeleteMap={handleDeleteMap} onMapSelect={fetchMapJsonByIndex} />
+          <div className={styles.mapDisplay}>
+            {selectedMapJson ? (
+              <DrawMapFromJson jsonData={selectedMapJson} />
+            ) : (
+              <p>No map selected</p>
+            )}
+          </div>
+          <label>
+            Grid Size:
+            <input 
+              type="number" 
+              value={gridSize} 
+              onChange={handleGridSizeChange} 
+              min="2" // Minimum value set to 2
+            />
+          </label>
+          <button onClick={handleSetGridSize} className='choiceButton'>Set Grid Size</button>
         </div>
-      </div>
-      <div className={styles.mapCreator}>
-        <MapCreator addNewMap={addNewMap} />
-      </div>
+      ) : (
+        <div className={styles.mapCreator}>
+          <MapCreator addNewMap={addNewMap} onCancel={() => setMode('view')} gridSize={gridSize} />
+        </div>
+      )}
     </div>
   );
 };
