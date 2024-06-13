@@ -6,7 +6,7 @@ import styles from "./MapManagement.module.css";
 import axios from 'axios';
 import MapCreator from './MapCreator';
 import MapViewer from '../DisplayMapVehicle/MapViewer';
-import DrawMapFromJson from '../DisplayMapVehicle/DrawMapFromJson';
+import DrawMapFromJsonForAdmin from '../DisplayMapVehicle/DrawMapFromJsonForAdmin';
 
 const MapManagement = () => {
   const [maps, setMaps] = useState([]);
@@ -74,7 +74,7 @@ const MapManagement = () => {
           <MapViewer maps={maps} onDeleteMap={handleDeleteMap} onMapSelect={fetchMapJsonByIndex} />
           <div className={styles.mapDisplay}>
             {selectedMapJson ? (
-              <DrawMapFromJson jsonData={selectedMapJson} />
+              <DrawMapFromJsonForAdmin jsonData={selectedMapJson} />
             ) : (
               <p>No map selected</p>
             )}
@@ -88,7 +88,7 @@ const MapManagement = () => {
               min="2" // Minimum value set to 2
             />
           </label>
-          <button onClick={handleSetGridSize} className='choiceButton'>Set Grid Size</button>
+          <button onClick={handleSetGridSize} className='choiceButton'>Create new map</button>
         </div>
       ) : (
         <div className={styles.mapCreator}>
