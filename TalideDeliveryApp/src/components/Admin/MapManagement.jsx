@@ -1,3 +1,4 @@
+// MapManagement.js
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
@@ -11,7 +12,7 @@ const MapManagement = () => {
   const [maps, setMaps] = useState([]);
   const [selectedMapJson, setSelectedMapJson] = useState(null);
   const [mode, setMode] = useState('view'); // 'view' or 'create'
-  const [gridSize, setGridSize] = useState(1); // Default grid size to 1
+  const [gridSize, setGridSize] = useState(2); // Default grid size to 2
 
   const fetchMaps = async () => {
     try {
@@ -74,7 +75,7 @@ const MapManagement = () => {
               type="number" 
               value={gridSize} 
               onChange={handleGridSizeChange} 
-              min="1" // Minimum value set to 1
+              min="2" // Minimum value set to 2
             />
           </label>
           <button onClick={handleSetGridSize} className='choiceButton'>Set Grid Size</button>
