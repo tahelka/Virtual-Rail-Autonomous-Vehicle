@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
-const MapViewer = ({ maps, onDeleteMap }) => {
+const MapViewer = ({ maps, onDeleteMap, onMapSelect }) => {
   const [selectedMapIndex, setSelectedMapIndex] = useState(null);
 
   useEffect(() => {
@@ -11,8 +11,15 @@ const MapViewer = ({ maps, onDeleteMap }) => {
     }
   }, [maps, selectedMapIndex]);
 
+  useEffect(() => {
+    if (selectedMapIndex !== null) {
+      onMapSelect(selectedMapIndex); // Fetch and display the map JSON data based on the selected index
+    }
+  }, [selectedMapIndex, onMapSelect]);
+
   const handleSelectMap = (event) => {
-    setSelectedMapIndex(Number(event.target.value));
+    const index = Number(event.target.value);
+    setSelectedMapIndex(index);
   };
 
   const handleDeleteMap = async (id) => {
@@ -35,7 +42,7 @@ const MapViewer = ({ maps, onDeleteMap }) => {
           <option key={index} value={index}>Map {index + 1}</option>
         ))}
       </select>
-      {selectedMap && selectedMap.data && (
+      {selectedMap && (
         <div>
           <button onClick={() => handleDeleteMap(selectedMap.id)}>Delete Map</button>
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(${selectedMap.data.gridSize}, 20px)` }}>
@@ -66,6 +73,7 @@ const MapViewer = ({ maps, onDeleteMap }) => {
 MapViewer.propTypes = {
   maps: PropTypes.array.isRequired,
   onDeleteMap: PropTypes.func.isRequired,
+  onMapSelect: PropTypes.func.isRequired,
 };
 
 export default MapViewer;

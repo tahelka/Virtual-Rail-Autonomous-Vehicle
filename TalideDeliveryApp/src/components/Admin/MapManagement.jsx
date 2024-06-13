@@ -1,4 +1,3 @@
-// MapManagement.js
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
@@ -17,15 +16,27 @@ const MapManagement = () => {
   const fetchMaps = async () => {
     try {
       const response = await axios.get('http://localhost:5000/api/maps');
-      setMaps(response.data);
-      if (response.data.length > 0) {
-        const firstMapId = response.data[0].id; // Assuming each map object has an 'id' property
+      const sortedMaps = response.data.sort((a, b) => new Date(a.creation_time) - new Date(b.creation_time));
+      setMaps(sortedMaps);
+      if (sortedMaps.length > 0) {
+        const firstMapId = sortedMaps[0].id; // Oldest map
         const jsonUrl = `http://localhost:5000/download/map_${firstMapId}.json`; // Construct the URL to download the JSON file
         const jsonResp = await axios.get(jsonUrl);
-        setSelectedMapJson(JSON.stringify(jsonResp.data)); // Set the first map's JSON data by default
+        setSelectedMapJson(JSON.stringify(jsonResp.data)); // Set the oldest map's JSON data by default
       }
     } catch (error) {
       console.error('Error fetching maps:', error);
+    }
+  };
+
+  const fetchMapJsonByIndex = async (index) => {
+    try {
+      const mapId = maps[index].id;
+      const jsonUrl = `http://localhost:5000/download/map_${mapId}.json`;
+      const jsonResp = await axios.get(jsonUrl);
+      setSelectedMapJson(JSON.stringify(jsonResp.data));
+    } catch (error) {
+      console.error('Error fetching map JSON:', error);
     }
   };
 
@@ -61,7 +72,7 @@ const MapManagement = () => {
     <div className={styles.MapManagement}>
       {mode === 'view' ? (
         <div className={styles.mapAdministrater}>
-          <MapViewer maps={maps} onDeleteMap={handleDeleteMap} />
+          <MapViewer maps={maps} onDeleteMap={handleDeleteMap} onMapSelect={fetchMapJsonByIndex} />
           <div className={styles.mapDisplay}>
             {selectedMapJson ? (
               <DrawMapFromJson jsonData={selectedMapJson} />
