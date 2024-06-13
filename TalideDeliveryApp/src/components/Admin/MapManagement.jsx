@@ -11,7 +11,7 @@ const MapManagement = () => {
   const [maps, setMaps] = useState([]);
   const [selectedMapJson, setSelectedMapJson] = useState(null);
   const [mode, setMode] = useState('view'); // 'view' or 'create'
-  const [gridSize, setGridSize] = useState(0);
+  const [gridSize, setGridSize] = useState(1); // Default grid size to 1
 
   const fetchMaps = async () => {
     try {
@@ -70,7 +70,12 @@ const MapManagement = () => {
           </div>
           <label>
             Grid Size:
-            <input type="number" value={gridSize} onChange={handleGridSizeChange} />
+            <input 
+              type="number" 
+              value={gridSize} 
+              onChange={handleGridSizeChange} 
+              min="1" // Minimum value set to 1
+            />
           </label>
           <button onClick={handleSetGridSize} className='choiceButton'>Set Grid Size</button>
         </div>
