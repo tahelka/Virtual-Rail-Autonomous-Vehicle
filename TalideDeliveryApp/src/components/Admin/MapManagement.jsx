@@ -1,3 +1,4 @@
+// MapManagement.js
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
@@ -18,12 +19,6 @@ const MapManagement = () => {
       const response = await axios.get('http://localhost:5000/api/maps');
       const sortedMaps = response.data.sort((a, b) => new Date(a.creation_time) - new Date(b.creation_time));
       setMaps(sortedMaps);
-      if (sortedMaps.length > 0) {
-        const firstMapId = sortedMaps[0].id; // Oldest map
-        const jsonUrl = `http://localhost:5000/download/map_${firstMapId}.json`; // Construct the URL to download the JSON file
-        const jsonResp = await axios.get(jsonUrl);
-        setSelectedMapJson(JSON.stringify(jsonResp.data)); // Set the oldest map's JSON data by default
-      }
     } catch (error) {
       console.error('Error fetching maps:', error);
     }
@@ -31,6 +26,10 @@ const MapManagement = () => {
 
   const fetchMapJsonByIndex = async (index) => {
     try {
+      if (index === -1) {
+        setSelectedMapJson(null);
+        return;
+      }
       const mapId = maps[index].id;
       const jsonUrl = `http://localhost:5000/download/map_${mapId}.json`;
       const jsonResp = await axios.get(jsonUrl);

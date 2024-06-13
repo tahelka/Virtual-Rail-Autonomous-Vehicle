@@ -1,20 +1,19 @@
 /* eslint-disable no-unused-vars */
+// MapViewer.js
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 const MapViewer = ({ maps, onDeleteMap, onMapSelect }) => {
-  const [selectedMapIndex, setSelectedMapIndex] = useState(null);
+  const [selectedMapIndex, setSelectedMapIndex] = useState(-1);
 
   useEffect(() => {
-    if (selectedMapIndex !== null && selectedMapIndex >= maps.length) {
-      setSelectedMapIndex(null);
+    if (selectedMapIndex !== -1 && selectedMapIndex >= maps.length) {
+      setSelectedMapIndex(-1);
     }
   }, [maps, selectedMapIndex]);
 
   useEffect(() => {
-    if (selectedMapIndex !== null) {
-      onMapSelect(selectedMapIndex); // Fetch and display the map JSON data based on the selected index
-    }
+    onMapSelect(selectedMapIndex); // Fetch and display the map JSON data based on the selected index
   }, [selectedMapIndex, onMapSelect]);
 
   const handleSelectMap = (event) => {
@@ -25,24 +24,24 @@ const MapViewer = ({ maps, onDeleteMap, onMapSelect }) => {
   const handleDeleteMap = async (id) => {
     try {
       await onDeleteMap(id);
-      setSelectedMapIndex(null);
+      setSelectedMapIndex(-1);
       console.log(`Map with id ${id} deleted from MapViewer`);
     } catch (error) {
       console.error('Error deleting map:', error);
     }
   };
 
-  const selectedMap = selectedMapIndex !== null ? maps[selectedMapIndex] : null;
+  const selectedMap = selectedMapIndex !== -1 ? maps[selectedMapIndex] : null;
 
   return (
     <div>
-      <select onChange={handleSelectMap} value={selectedMapIndex !== null ? selectedMapIndex : ''}>
-        <option value="" disabled>Select a map</option>
+      <select onChange={handleSelectMap} value={selectedMapIndex !== -1 ? selectedMapIndex : ''}>
+        <option value="-1">No selected map</option>
         {maps.map((map, index) => (
           <option key={index} value={index}>Map {index + 1}</option>
         ))}
       </select>
-      {selectedMap && (
+      {selectedMap && selectedMap.data && (
         <div>
           <button onClick={() => handleDeleteMap(selectedMap.id)}>Delete Map</button>
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(${selectedMap.data.gridSize}, 20px)` }}>
