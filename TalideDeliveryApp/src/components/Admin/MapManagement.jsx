@@ -88,7 +88,7 @@ const MapManagement = () => {
               min="2" // Minimum value set to 2
             />
           </label>
-          <button onClick={handleSetGridSize} className='choiceButton'>Set Grid Size</button>
+          <button onClick={handleSetGridSize} className='choiceButton'>Create new map</button>
         </div>
       ) : (
         <div className={styles.mapCreator}>
