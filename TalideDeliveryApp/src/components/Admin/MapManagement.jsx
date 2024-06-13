@@ -10,6 +10,8 @@ import DrawMapFromJson from '../DisplayMapVehicle/DrawMapFromJson';
 const MapManagement = () => {
   const [maps, setMaps] = useState([]);
   const [selectedMapJson, setSelectedMapJson] = useState(null);
+  const [mode, setMode] = useState('view'); // 'view' or 'create'
+  const [gridSize, setGridSize] = useState(0);
 
   const fetchMaps = async () => {
     try {
@@ -24,7 +26,7 @@ const MapManagement = () => {
     } catch (error) {
       console.error('Error fetching maps:', error);
     }
-  };  
+  };
 
   useEffect(() => {
     fetchMaps();
@@ -33,6 +35,7 @@ const MapManagement = () => {
   const addNewMap = (newMap) => {
     setMaps([...maps, newMap]);
     fetchMaps();
+    setMode('view'); // Switch to view mode after adding a new map
   };
 
   const handleDeleteMap = async (id) => {
@@ -45,21 +48,37 @@ const MapManagement = () => {
     }
   };
 
+  const handleSetGridSize = () => {
+    setMode('create');
+  };
+
+  const handleGridSizeChange = (event) => {
+    setGridSize(Number(event.target.value));
+  };
+
   return (
     <div className={styles.MapManagement}>
-      <div className={styles.mapAdministrater}>
-        <MapViewer maps={maps} onDeleteMap={handleDeleteMap} />
-        <div className={styles.mapDisplay}>
-          {selectedMapJson ? (
-            <DrawMapFromJson jsonData={selectedMapJson} />
-          ) : (
-            <p>No map selected</p>
-          )}
+      {mode === 'view' ? (
+        <div className={styles.mapAdministrater}>
+          <MapViewer maps={maps} onDeleteMap={handleDeleteMap} />
+          <div className={styles.mapDisplay}>
+            {selectedMapJson ? (
+              <DrawMapFromJson jsonData={selectedMapJson} />
+            ) : (
+              <p>No map selected</p>
+            )}
+          </div>
+          <label>
+            Grid Size:
+            <input type="number" value={gridSize} onChange={handleGridSizeChange} />
+          </label>
+          <button onClick={handleSetGridSize} className='choiceButton'>Set Grid Size</button>
         </div>
-      </div>
-      <div className={styles.mapCreator}>
-        <MapCreator addNewMap={addNewMap} />
-      </div>
+      ) : (
+        <div className={styles.mapCreator}>
+          <MapCreator addNewMap={addNewMap} onCancel={() => setMode('view')} gridSize={gridSize} />
+        </div>
+      )}
     </div>
   );
 };

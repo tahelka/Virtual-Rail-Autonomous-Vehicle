@@ -63,6 +63,7 @@ const DrawMapFromJson = ({ jsonData, onCancel }) => {
         </Layer>
       </Stage>
       <div className={styles.buttonContainer}>
+        
         <button onClick={onCancel} className={styles.choiceButton}>Cancel</button>
       </div>
     </div>
