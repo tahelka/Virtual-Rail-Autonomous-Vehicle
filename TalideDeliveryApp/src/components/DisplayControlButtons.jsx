@@ -3,7 +3,7 @@ import styles from "./DisplayControlButtons.module.css";
 import DisplayDropDownButton from "./DisplayDropDownButton/DisplayDropDownButton";
 import DropDownButtonItem from "./DisplayDropDownButton/DropDownButtonItem";
 import StyledButton from "./StyledButton";
-import PropTypes from 'prop-types';
+import PropTypes from 'prop-types'; 
 import React, { useState } from 'react';
 
 const directions = ["NORTH", "SOUTH", "EAST", "WEST"];
