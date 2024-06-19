@@ -38,7 +38,7 @@
 }
 
 .toggleIcon:hover {
-  color:rgb(53, 150, 182);
+  color: rgb(53, 150, 182);
 }
 
 .contentClosed {
@@ -62,4 +62,30 @@
 
 .displayDropDownButton {
   position: relative;
+}
+
+.textBox {
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #333;
+}
+
+.styledButton {
+  background-color: #ffffff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+}
+
+.pressedButton {
+  background-color: #d1d1d1;
+  border: 1px solid #000;
 }

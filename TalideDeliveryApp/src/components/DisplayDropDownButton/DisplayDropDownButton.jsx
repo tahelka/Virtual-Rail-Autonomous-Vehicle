@@ -5,11 +5,20 @@ import DropDownButton from "./DropDownButton";
 import DropDownButtonContent from "./DropDownButtonContent";
 import styles from "../DisplayControlButtons.module.css";
 
-const DisplayDropDownButton = ({ buttonText, content }) => {
+const DisplayDropDownButton = ({ buttonText, content, onClick }) => {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  const toggleDropDown = () => setOpen(!open);
+  const toggleDropDown = () => {
+    if (onClick) {
+      const shouldOpen = onClick(); // Call the custom click handler if provided
+      if (shouldOpen) {
+        setOpen(!open);
+      }
+    } else {
+      setOpen(!open);
+    }
+  };
 
   const closeMenu = () => {
     setOpen(false);
@@ -45,6 +54,7 @@ const DisplayDropDownButton = ({ buttonText, content }) => {
 DisplayDropDownButton.propTypes = {
   buttonText: PropTypes.node.isRequired,
   content: PropTypes.node.isRequired,
+  onClick: PropTypes.func,
 };
 
 export default DisplayDropDownButton;

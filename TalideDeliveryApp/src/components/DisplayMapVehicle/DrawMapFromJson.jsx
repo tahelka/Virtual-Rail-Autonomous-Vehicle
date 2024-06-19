@@ -4,12 +4,13 @@ import PropTypes from 'prop-types';
 import { Stage, Layer, Circle, Line } from 'react-konva';
 import styles from '../Admin/DrawMap.module.css';
 
-const DrawMapFromJson = ({ jsonData, isEditable = false, onSave, onCancel }) => {
+const DrawMapFromJson = ({ jsonData, isEditable = false, userMode = false, isChoosingStartingPoint = false, isChoosingDestinationPoint = false, setButtonText, setDestinationButtonText, setIsChoosingStartingPoint, setIsChoosingDestinationPoint, onSave, onCancel }) => {
   const [nodes, setNodes] = useState([]);
   const [lines, setLines] = useState([]);
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentLine, setCurrentLine] = useState([]);
   const [nodeMap, setNodeMap] = useState({});
+  const [hoveredNodeId, setHoveredNodeId] = useState(null);
 
   useEffect(() => {
     if (jsonData) {
@@ -45,8 +46,14 @@ const DrawMapFromJson = ({ jsonData, isEditable = false, onSave, onCancel }) => 
     }
   }, [jsonData]);
 
+  useEffect(() => {
+    if (!isChoosingStartingPoint && !isChoosingDestinationPoint) {
+      document.body.style.cursor = 'default';
+    }
+  }, [isChoosingStartingPoint, isChoosingDestinationPoint]);
+
   const handleMouseDown = (e) => {
-    if (!isEditable) return;
+    if (!isEditable && !isChoosingStartingPoint && !isChoosingDestinationPoint) return;
     const { x, y } = e.target.getStage().getPointerPosition();
     const nearestNode = findNearestNode(x, y);
     if (nearestNode) {
@@ -146,6 +153,16 @@ const DrawMapFromJson = ({ jsonData, isEditable = false, onSave, onCancel }) => 
     return newLines;
   };
 
+  const handleNodeClick = (node) => {
+    if (isChoosingStartingPoint) {
+      setButtonText(`${node.id}`);
+      setIsChoosingStartingPoint(false);
+    } else if (isChoosingDestinationPoint) {
+      setDestinationButtonText(`${node.id}`);
+      setIsChoosingDestinationPoint(false);
+    }
+  };
+
   const handleSave = async () => {
     const updatedNodes = nodes.map(node => {
       const nodeLines = lines.filter(line => line.startNode === node.id);
@@ -189,7 +206,22 @@ const DrawMapFromJson = ({ jsonData, isEditable = false, onSave, onCancel }) => 
       >
         <Layer>
           {nodes.map((node) => (
-            <Circle key={node.id} x={node.x} y={node.y} radius={10} fill="black" />
+            <Circle
+              key={node.id}
+              x={node.x}
+              y={node.y}
+              radius={10}
+              fill={isChoosingStartingPoint || isChoosingDestinationPoint ? 'grey' : 'black'}
+              onClick={() => handleNodeClick(node)}
+              onMouseEnter={isChoosingStartingPoint || isChoosingDestinationPoint ? () => {
+                document.body.style.cursor = 'pointer';
+                setHoveredNodeId(node.id);
+              } : null}
+              onMouseLeave={isChoosingStartingPoint || isChoosingDestinationPoint ? () => {
+                document.body.style.cursor = 'default';
+                setHoveredNodeId(null);
+              } : null}
+            />
           ))}
           {lines.map((line, index) => (
             <Line
@@ -220,6 +252,13 @@ const DrawMapFromJson = ({ jsonData, isEditable = false, onSave, onCancel }) => 
 DrawMapFromJson.propTypes = {
   jsonData: PropTypes.string.isRequired,
   isEditable: PropTypes.bool,
+  userMode: PropTypes.bool,
+  isChoosingStartingPoint: PropTypes.bool,
+  isChoosingDestinationPoint: PropTypes.bool,
+  setButtonText: PropTypes.func.isRequired,
+  setDestinationButtonText: PropTypes.func.isRequired,
+  setIsChoosingStartingPoint: PropTypes.func.isRequired,
+  setIsChoosingDestinationPoint: PropTypes.func.isRequired,
   onSave: PropTypes.func,
   onCancel: PropTypes.func,
 };

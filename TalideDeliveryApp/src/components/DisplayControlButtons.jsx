@@ -3,26 +3,18 @@ import styles from "./DisplayControlButtons.module.css";
 import DisplayDropDownButton from "./DisplayDropDownButton/DisplayDropDownButton";
 import DropDownButtonItem from "./DisplayDropDownButton/DropDownButtonItem";
 import StyledButton from "./StyledButton";
-import PropTypes from 'prop-types'; 
+import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 
 const directions = ["NORTH", "SOUTH", "EAST", "WEST"];
 
-function DisplayControlButtons({ maps, fetchMapJsonByIndex, setSelectedMapJson }) {
+function DisplayControlButtons({ maps, fetchMapJsonByIndex, setSelectedMapJson, toggleChoosingStartingPoint, toggleChoosingDestinationPoint, buttonText, setButtonText, destinationButtonText, setDestinationButtonText, isChoosingStartingPoint, isChoosingDestinationPoint, selectedOrientation, setSelectedOrientation }) {
   const [selectedMap, setSelectedMap] = useState('CHOOSE MAP');
   const [selectedCar, setSelectedCar] = useState('CHOOSE CAR');
-  const [selectedStartingOrientation, setSelectedStartingOrientation] = useState('STARTING ORIENTATION');
-  const [selectedMapJson, setSelectedMapJsonState] = useState(null);
-
-  const clickMe = () => {
-    alert('YAY!');
-    console.log(`clicked!`);
-  };
 
   const updateChosenMapImageAndName = (item) => {
     setSelectedMap(`Map ${item}`);
     fetchMapJsonByIndex(item - 1); // Adjusted index to fetch the correct map JSON
-    setSelectedMapJsonState(maps[item - 1].jsonData); // Adjusted to set JSON data
   };
 
   const updateChosenCarAndName = (item) => {
@@ -30,12 +22,35 @@ function DisplayControlButtons({ maps, fetchMapJsonByIndex, setSelectedMapJson }
   };
 
   const updateChosenStartingOrientation = (item) => {
-    setSelectedStartingOrientation(`${item}`);
+    setSelectedOrientation(item);
+  };
+
+  const handleToggleChoosingStartingPoint = () => {
+    if (selectedMap === 'CHOOSE MAP') {
+      alert('Please choose a map first');
+      return;
+    }
+    toggleChoosingStartingPoint();
+  };
+
+  const handleToggleChoosingDestinationPoint = () => {
+    if (selectedMap === 'CHOOSE MAP') {
+      alert('Please choose a map first');
+      return;
+    }
+    toggleChoosingDestinationPoint();
+  };
+
+  const handleOrientationClick = () => {
+    if (selectedMap === 'CHOOSE MAP') {
+      alert('Please choose a map first');
+      return false;
+    }
+    return true; // Indicate that the dropdown should open
   };
 
   return (
     <div className={styles.displayControlButtons}>
-           
       <DisplayDropDownButton
         buttonText={selectedMap}
         content={
@@ -70,13 +85,22 @@ function DisplayControlButtons({ maps, fetchMapJsonByIndex, setSelectedMapJson }
         }
       />
 
-      <StyledButton onClick={clickMe}>MAPS & CARS STAT</StyledButton>
-
       <div className={styles.buttonCarControlContainer}>
-        <StyledButton>CHOOSE STARTING POINT</StyledButton>
-        <StyledButton>CHOOSE DESTINATION</StyledButton>
+        <StyledButton
+          onClick={handleToggleChoosingStartingPoint}
+          className={`${isChoosingStartingPoint ? styles.pressedButton : ''}`}
+        >
+          CHOOSE STARTING POINT
+        </StyledButton>
+        <StyledButton
+          onClick={handleToggleChoosingDestinationPoint}
+          className={`${isChoosingDestinationPoint ? styles.pressedButton : ''}`}
+        >
+          CHOOSE DESTINATION POINT
+        </StyledButton>
+
         <DisplayDropDownButton
-          buttonText={selectedStartingOrientation}
+          buttonText={selectedOrientation}
           content={
             <>
               {directions.map((item) => (
@@ -86,7 +110,15 @@ function DisplayControlButtons({ maps, fetchMapJsonByIndex, setSelectedMapJson }
               ))}
             </>
           }
+          onClick={handleOrientationClick}
         />
+
+        <div className={styles.textBox}>
+          <p>Starting Point: {buttonText !== 'CHOOSE STARTING POINT' ? buttonText : ''}</p>
+          <p>Destination Point: {destinationButtonText !== 'CHOOSE DESTINATION POINT' ? destinationButtonText : ''}</p>
+          <p>Orientation: {selectedOrientation !== 'STARTING ORIENTATION' ? selectedOrientation : ''}</p>
+        </div>
+
         <StyledButton bold>START</StyledButton> {/* Bold button */}
       </div>
     </div>
@@ -97,6 +129,16 @@ DisplayControlButtons.propTypes = {
   maps: PropTypes.array.isRequired,
   fetchMapJsonByIndex: PropTypes.func.isRequired,
   setSelectedMapJson: PropTypes.func.isRequired,
+  toggleChoosingStartingPoint: PropTypes.func.isRequired,
+  toggleChoosingDestinationPoint: PropTypes.func.isRequired,
+  buttonText: PropTypes.string.isRequired,
+  destinationButtonText: PropTypes.string.isRequired,
+  setButtonText: PropTypes.func.isRequired,
+  setDestinationButtonText: PropTypes.func.isRequired,
+  isChoosingStartingPoint: PropTypes.bool.isRequired,
+  isChoosingDestinationPoint: PropTypes.bool.isRequired,
+  selectedOrientation: PropTypes.string.isRequired,
+  setSelectedOrientation: PropTypes.func.isRequired,
 };
 
 export default DisplayControlButtons;
