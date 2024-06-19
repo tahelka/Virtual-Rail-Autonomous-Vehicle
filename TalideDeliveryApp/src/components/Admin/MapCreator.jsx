@@ -23,7 +23,7 @@ const MapCreator = ({ addNewMap, onCancel, gridSize }) => {
 
   const handleCancel = () => {
     setError(null);
-    onCancel(); // Switch to view mode on cancel
+    onCancel();
   };
 
   return (

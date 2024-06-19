@@ -1,7 +1,12 @@
 [
   {
     "id": 1,
-    "edges": []
+    "edges": [
+      {
+        "vertex": 3,
+        "direction": "south"
+      }
+    ]
   },
   {
     "id": 2,
@@ -18,6 +23,10 @@
       {
         "vertex": 4,
         "direction": "east"
+      },
+      {
+        "vertex": 1,
+        "direction": "north"
       }
     ]
   },

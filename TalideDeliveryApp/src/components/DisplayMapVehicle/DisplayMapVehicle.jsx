@@ -8,6 +8,12 @@ import DrawMapFromJson from './DrawMapFromJson';
 function DisplayMapVehicle() {
   const [maps, setMaps] = useState([]);
   const [selectedMapJson, setSelectedMapJson] = useState(null);
+  const [userMode, setUserMode] = useState(true);
+  const [buttonText, setButtonText] = useState('CHOOSE STARTING POINT');
+  const [destinationButtonText, setDestinationButtonText] = useState('CHOOSE DESTINATION POINT');
+  const [isChoosingStartingPoint, setIsChoosingStartingPoint] = useState(false);
+  const [isChoosingDestinationPoint, setIsChoosingDestinationPoint] = useState(false);
+  const [selectedOrientation, setSelectedOrientation] = useState('STARTING ORIENTATION');
 
   const fetchMaps = async () => {
     try {
@@ -38,12 +44,35 @@ function DisplayMapVehicle() {
     fetchMaps();
   }, []);
 
+  const toggleChoosingStartingPoint = () => {
+    setIsChoosingStartingPoint(prev => !prev);
+    if (isChoosingDestinationPoint) {
+      setIsChoosingDestinationPoint(false);
+    }
+  };
+
+  const toggleChoosingDestinationPoint = () => {
+    setIsChoosingDestinationPoint(prev => !prev);
+    if (isChoosingStartingPoint) {
+      setIsChoosingStartingPoint(false);
+    }
+  };
+
   return (
     <div>
       <div className={styles.displayContainer}>
         <div className={styles.map}>
           {selectedMapJson ? (
-            <DrawMapFromJson jsonData={selectedMapJson} />
+            <DrawMapFromJson
+              jsonData={selectedMapJson}
+              userMode={userMode}
+              isChoosingStartingPoint={isChoosingStartingPoint}
+              isChoosingDestinationPoint={isChoosingDestinationPoint}
+              setButtonText={setButtonText}
+              setDestinationButtonText={setDestinationButtonText}
+              setIsChoosingStartingPoint={setIsChoosingStartingPoint}
+              setIsChoosingDestinationPoint={setIsChoosingDestinationPoint}
+            />
           ) : (
             <p>No map selected</p>
           )}
@@ -53,6 +82,16 @@ function DisplayMapVehicle() {
             maps={maps}
             fetchMapJsonByIndex={fetchMapJsonByIndex}
             setSelectedMapJson={setSelectedMapJson}
+            toggleChoosingStartingPoint={toggleChoosingStartingPoint}
+            toggleChoosingDestinationPoint={toggleChoosingDestinationPoint}
+            buttonText={buttonText}
+            destinationButtonText={destinationButtonText}
+            setButtonText={setButtonText}
+            setDestinationButtonText={setDestinationButtonText}
+            isChoosingStartingPoint={isChoosingStartingPoint}
+            isChoosingDestinationPoint={isChoosingDestinationPoint}
+            selectedOrientation={selectedOrientation}
+            setSelectedOrientation={setSelectedOrientation}
           />
         </div>
       </div>
