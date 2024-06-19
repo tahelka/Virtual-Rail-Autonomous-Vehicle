@@ -8,7 +8,7 @@ import DrawMapFromJson from './DrawMapFromJson';
 function DisplayMapVehicle() {
   const [maps, setMaps] = useState([]);
   const [selectedMapJson, setSelectedMapJson] = useState(null);
-  const [userMode, setUserMode] = useState(true);  // Ensure userMode is properly set
+  const [userMode, setUserMode] = useState(true);
   const [buttonText, setButtonText] = useState('CHOOSE STARTING POINT');
   const [destinationButtonText, setDestinationButtonText] = useState('CHOOSE DESTINATION POINT');
   const [isChoosingStartingPoint, setIsChoosingStartingPoint] = useState(false);
@@ -47,14 +47,14 @@ function DisplayMapVehicle() {
   const toggleChoosingStartingPoint = () => {
     setIsChoosingStartingPoint(prev => !prev);
     if (isChoosingDestinationPoint) {
-      setIsChoosingDestinationPoint(false); // Ensure only one mode is active at a time
+      setIsChoosingDestinationPoint(false);
     }
   };
 
   const toggleChoosingDestinationPoint = () => {
     setIsChoosingDestinationPoint(prev => !prev);
     if (isChoosingStartingPoint) {
-      setIsChoosingStartingPoint(false); // Ensure only one mode is active at a time
+      setIsChoosingStartingPoint(false);
     }
   };
 

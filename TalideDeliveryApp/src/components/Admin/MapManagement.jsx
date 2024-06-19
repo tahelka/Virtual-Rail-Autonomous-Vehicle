@@ -1,4 +1,3 @@
-// MapManagement.js
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';

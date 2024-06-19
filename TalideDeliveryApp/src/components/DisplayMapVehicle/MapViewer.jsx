@@ -1,5 +1,4 @@
 /* eslint-disable no-unused-vars */
-// MapViewer.js
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 

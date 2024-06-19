@@ -119,7 +119,7 @@ function DisplayControlButtons({ maps, fetchMapJsonByIndex, setSelectedMapJson, 
           <p>Orientation: {selectedOrientation !== 'STARTING ORIENTATION' ? selectedOrientation : ''}</p>
         </div>
 
-        <StyledButton bold>START</StyledButton> {/* Bold button */}
+        <StyledButton bold>START</StyledButton>
       </div>
     </div>
   );

@@ -11,7 +11,7 @@ const DisplayDropDownButton = ({ buttonText, content, onClick }) => {
 
   const toggleDropDown = () => {
     if (onClick) {
-      const shouldOpen = onClick(); // Call the custom click handler if provided
+      const shouldOpen = onClick();
       if (shouldOpen) {
         setOpen(!open);
       }
