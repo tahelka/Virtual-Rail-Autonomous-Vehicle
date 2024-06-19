@@ -5,10 +5,13 @@ import DropDownButtonItem from "./DisplayDropDownButton/DropDownButtonItem";
 import StyledButton from "./StyledButton";
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
+import axios from 'axios';
 
 const directions = ["NORTH", "SOUTH", "EAST", "WEST"];
 
-function DisplayControlButtons({ maps, fetchMapJsonByIndex, setSelectedMapJson, toggleChoosingStartingPoint, toggleChoosingDestinationPoint, buttonText, setButtonText, destinationButtonText, setDestinationButtonText, isChoosingStartingPoint, isChoosingDestinationPoint, selectedOrientation, setSelectedOrientation }) {
+function DisplayControlButtons({ maps, fetchMapJsonByIndex, setSelectedMapJson, toggleChoosingStartingPoint, 
+  toggleChoosingDestinationPoint, buttonText, setButtonText, destinationButtonText, setDestinationButtonText, 
+  isChoosingStartingPoint, isChoosingDestinationPoint, selectedOrientation, setSelectedOrientation }) {
   const [selectedMap, setSelectedMap] = useState('CHOOSE MAP');
   const [selectedCar, setSelectedCar] = useState('CHOOSE CAR');
 
@@ -47,6 +50,30 @@ function DisplayControlButtons({ maps, fetchMapJsonByIndex, setSelectedMapJson, 
       return false;
     }
     return true; // Indicate that the dropdown should open
+  };
+
+  const handleStartClick = async () => {
+    if (buttonText === 'CHOOSE STARTING POINT' || destinationButtonText === 'CHOOSE DESTINATION POINT' || selectedOrientation === 'STARTING ORIENTATION') {
+      alert('Please select all values: Starting Point, Destination Point, and Orientation.');
+      return;
+    }
+
+    try {
+      const response = await axios.post(`http://localhost:5000/graph?start=${buttonText}&target=${destinationButtonText}`, {
+        orientation: selectedOrientation,
+        map: selectedMap,
+      });
+
+      if (response.status === 200) {
+        alert('Request sent successfully!');
+        console.log(response.data);
+      } else {
+        alert('Failed to send request. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error sending request:', error);
+      alert('Error sending request. Please check the console for details.');
+    }
   };
 
   return (
@@ -119,7 +146,7 @@ function DisplayControlButtons({ maps, fetchMapJsonByIndex, setSelectedMapJson, 
           <p>Orientation: {selectedOrientation !== 'STARTING ORIENTATION' ? selectedOrientation : ''}</p>
         </div>
 
-        <StyledButton bold>START</StyledButton>
+        <StyledButton bold onClick={handleStartClick}>START</StyledButton>
       </div>
     </div>
   );
