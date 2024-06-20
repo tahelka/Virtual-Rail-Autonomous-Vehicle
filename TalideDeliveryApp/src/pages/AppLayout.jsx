@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import React from 'react';
+import React, { useCallback } from 'react';
 import styles from "./AppLayout.module.css";
 import DisplayMapVehicle from "../components/DisplayMapVehicle/DisplayMapVehicle";
 import TitleBar from "../components/TitleLogoBar/TitleBar";
@@ -10,12 +10,16 @@ import TabMenuSectionContent from "../components/TabMenu/TabMenuSectionContent";
 import PropTypes from 'prop-types';
 
 function AppLayout({ maps, fetchMaps }) {
+  const memoizedFetchMaps = useCallback(() => {
+    fetchMaps();
+  }, [fetchMaps]);
+
   return (
     <div className={styles.appContainer}>
       <TitleBar />
 
       <div className={styles.pageContainer}>
-        <DisplayMapVehicle maps={maps} fetchMaps={fetchMaps} />
+        <DisplayMapVehicle maps={maps} fetchMaps={memoizedFetchMaps} />
 
         <TabMenuSection>
           <NavBar />

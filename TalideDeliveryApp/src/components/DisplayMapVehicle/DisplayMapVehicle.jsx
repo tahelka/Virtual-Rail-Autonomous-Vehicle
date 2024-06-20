@@ -39,7 +39,7 @@ function DisplayMapVehicle({ maps, fetchMaps }) {
 
   useEffect(() => {
     fetchMaps();
-  }, []);
+  }, [fetchMaps]);
 
   useEffect(() => {
     if (!maps.find(map => map.id === selectedMapId)) {
@@ -48,7 +48,7 @@ function DisplayMapVehicle({ maps, fetchMaps }) {
       setSelectedMap('CHOOSE A MAP');
       resetSelections();
     }
-  }, [maps]);
+  }, [maps, selectedMapId]);
 
   const resetSelections = () => {
     setButtonText('CHOOSE STARTING POINT');
