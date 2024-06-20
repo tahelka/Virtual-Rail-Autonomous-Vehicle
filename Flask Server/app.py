@@ -80,16 +80,24 @@ app.config['MAPS_FOLDER'] = MAPS_FOLDER
 def save_map():
     try:
         map_data = request.json.get('mapData')
+        map_data = json.loads(map_data)
+
+        # Convert node IDs to strings
+        for node in map_data:
+            node['id'] = str(node['id'])
+            for edge in node['edges']:
+                edge['vertex'] = str(edge['vertex'])
+
         map_name = f'map_{uuid.uuid4()}.json'
         file_path = os.path.join(app.config['MAPS_FOLDER'], map_name)
         
         # Save the map data with proper formatting
         with open(file_path, 'w') as file:
-            file.write(map_data)
+            file.write(json.dumps(map_data, indent=2))
         
         return jsonify({"message": "Map saved successfully", "id": map_name.split('_')[1].split('.')[0]}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": str(e)}), 400    
 
 @app.route('/api/maps/delete/<map_id>', methods=['DELETE'])
 def delete_map(map_id):
