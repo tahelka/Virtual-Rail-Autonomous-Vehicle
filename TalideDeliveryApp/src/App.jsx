@@ -8,6 +8,8 @@ import Admin from "./pages/Admin";
 import { AuthProvider } from "./context/AuthProvider";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import Login from "./pages/Login";
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -18,6 +20,22 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  const [maps, setMaps] = useState([]);
+
+  const fetchMaps = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/maps');
+      const sortedMaps = response.data.sort((a, b) => new Date(a.creation_time) - new Date(b.creation_time));
+      setMaps(sortedMaps);
+    } catch (error) {
+      console.error('Error fetching maps:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchMaps();
+  }, []);
+
   return (
     <>
       <QueryClientProvider client={queryClient}>
@@ -32,7 +50,7 @@ function App() {
                 path="app"
                 element={
                   <ProtectedRoute>
-                    <AppLayout />
+                    <AppLayout maps={maps} fetchMaps={fetchMaps} />
                   </ProtectedRoute>
                 }
               >
@@ -41,7 +59,7 @@ function App() {
                 <Route path="cars" element={<h1>Cars</h1>} />
                 <Route path="data" element={<h1>Data</h1>} />
                 <Route path="contacts" element={<h1>Contacts</h1>} />
-                <Route path="admin" element={<Admin />} />
+                <Route path="admin" element={<Admin maps={maps} fetchMaps={fetchMaps} />} />
               </Route>
             </Routes>
           </AuthProvider>

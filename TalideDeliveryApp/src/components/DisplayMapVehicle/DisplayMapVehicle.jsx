@@ -4,10 +4,12 @@ import axios from 'axios';
 import styles from "./DisplayMapVehicle.module.css";
 import DisplayControlButtons from "../DisplayControlButtons";
 import DrawMapFromJson from './DrawMapFromJson';
+import PropTypes from 'prop-types';
 
-function DisplayMapVehicle() {
-  const [maps, setMaps] = useState([]);
+function DisplayMapVehicle({ maps, fetchMaps }) {
   const [selectedMapJson, setSelectedMapJson] = useState(null);
+  const [selectedMapId, setSelectedMapId] = useState(null);
+  const [selectedMap, setSelectedMap] = useState('CHOOSE A MAP');
   const [userMode, setUserMode] = useState(true);
   const [buttonText, setButtonText] = useState('CHOOSE STARTING POINT');
   const [destinationButtonText, setDestinationButtonText] = useState('CHOOSE DESTINATION POINT');
@@ -15,26 +17,21 @@ function DisplayMapVehicle() {
   const [isChoosingDestinationPoint, setIsChoosingDestinationPoint] = useState(false);
   const [selectedOrientation, setSelectedOrientation] = useState('STARTING ORIENTATION');
 
-  const fetchMaps = async () => {
-    try {
-      const response = await axios.get('http://localhost:5000/api/maps');
-      const sortedMaps = response.data.sort((a, b) => new Date(a.creation_time) - new Date(b.creation_time));
-      setMaps(sortedMaps);
-    } catch (error) {
-      console.error('Error fetching maps:', error);
-    }
-  };
-
   const fetchMapJsonByIndex = async (index) => {
     try {
       if (index === -1) {
         setSelectedMapJson(null);
+        setSelectedMapId(null);
+        setSelectedMap('CHOOSE A MAP');
+        resetSelections();
         return;
       }
       const mapId = maps[index].id;
       const jsonUrl = `http://localhost:5000/download/map_${mapId}.json`;
       const jsonResp = await axios.get(jsonUrl);
       setSelectedMapJson(JSON.stringify(jsonResp.data));
+      setSelectedMapId(mapId);
+      setSelectedMap(`Map ${index + 1}`);
     } catch (error) {
       console.error('Error fetching map JSON:', error);
     }
@@ -43,6 +40,21 @@ function DisplayMapVehicle() {
   useEffect(() => {
     fetchMaps();
   }, []);
+
+  useEffect(() => {
+    if (!maps.find(map => map.id === selectedMapId)) {
+      setSelectedMapJson(null);
+      setSelectedMapId(null);
+      setSelectedMap('CHOOSE A MAP');
+      resetSelections();
+    }
+  }, [maps]);
+
+  const resetSelections = () => {
+    setButtonText('CHOOSE STARTING POINT');
+    setDestinationButtonText('CHOOSE DESTINATION POINT');
+    setSelectedOrientation('STARTING ORIENTATION');
+  };
 
   const toggleChoosingStartingPoint = () => {
     setIsChoosingStartingPoint(prev => !prev);
@@ -82,6 +94,8 @@ function DisplayMapVehicle() {
             maps={maps}
             fetchMapJsonByIndex={fetchMapJsonByIndex}
             setSelectedMapJson={setSelectedMapJson}
+            selectedMap={selectedMap}
+            setSelectedMap={setSelectedMap}
             toggleChoosingStartingPoint={toggleChoosingStartingPoint}
             toggleChoosingDestinationPoint={toggleChoosingDestinationPoint}
             buttonText={buttonText}
@@ -99,5 +113,10 @@ function DisplayMapVehicle() {
     </div>
   );
 }
+
+DisplayMapVehicle.propTypes = {
+  maps: PropTypes.array.isRequired,
+  fetchMaps: PropTypes.func.isRequired,
+};
 
 export default DisplayMapVehicle;

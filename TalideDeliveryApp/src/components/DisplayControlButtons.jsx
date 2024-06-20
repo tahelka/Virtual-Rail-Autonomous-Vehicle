@@ -9,10 +9,9 @@ import axios from 'axios';
 
 const directions = ["NORTH", "SOUTH", "EAST", "WEST"];
 
-function DisplayControlButtons({ maps, fetchMapJsonByIndex, setSelectedMapJson, toggleChoosingStartingPoint, 
+function DisplayControlButtons({ maps, fetchMapJsonByIndex, setSelectedMapJson, selectedMap, setSelectedMap, toggleChoosingStartingPoint, 
   toggleChoosingDestinationPoint, buttonText, setButtonText, destinationButtonText, setDestinationButtonText, 
   isChoosingStartingPoint, isChoosingDestinationPoint, selectedOrientation, setSelectedOrientation }) {
-  const [selectedMap, setSelectedMap] = useState('CHOOSE MAP');
   const [selectedCar, setSelectedCar] = useState('CHOOSE CAR');
 
   const updateChosenMapImageAndName = (item) => {
@@ -29,7 +28,7 @@ function DisplayControlButtons({ maps, fetchMapJsonByIndex, setSelectedMapJson, 
   };
 
   const handleToggleChoosingStartingPoint = () => {
-    if (selectedMap === 'CHOOSE MAP') {
+    if (selectedMap === 'CHOOSE A MAP') {
       alert('Please choose a map first');
       return;
     }
@@ -37,7 +36,7 @@ function DisplayControlButtons({ maps, fetchMapJsonByIndex, setSelectedMapJson, 
   };
 
   const handleToggleChoosingDestinationPoint = () => {
-    if (selectedMap === 'CHOOSE MAP') {
+    if (selectedMap === 'CHOOSE A MAP') {
       alert('Please choose a map first');
       return;
     }
@@ -45,7 +44,7 @@ function DisplayControlButtons({ maps, fetchMapJsonByIndex, setSelectedMapJson, 
   };
 
   const handleOrientationClick = () => {
-    if (selectedMap === 'CHOOSE MAP') {
+    if (selectedMap === 'CHOOSE A MAP') {
       alert('Please choose a map first');
       return false;
     }
@@ -156,6 +155,8 @@ DisplayControlButtons.propTypes = {
   maps: PropTypes.array.isRequired,
   fetchMapJsonByIndex: PropTypes.func.isRequired,
   setSelectedMapJson: PropTypes.func.isRequired,
+  selectedMap: PropTypes.string.isRequired,
+  setSelectedMap: PropTypes.func.isRequired,
   toggleChoosingStartingPoint: PropTypes.func.isRequired,
   toggleChoosingDestinationPoint: PropTypes.func.isRequired,
   buttonText: PropTypes.string.isRequired,
