@@ -1,11 +1,11 @@
 /* eslint-disable no-unused-vars */
+import React, { useState } from 'react';
+import PropTypes from 'prop-types';
+import axios from 'axios';
 import styles from "./DisplayControlButtons.module.css";
 import DisplayDropDownButton from "./DisplayDropDownButton/DisplayDropDownButton";
 import DropDownButtonItem from "./DisplayDropDownButton/DropDownButtonItem";
 import StyledButton from "./StyledButton";
-import PropTypes from 'prop-types';
-import React, { useState } from 'react';
-import axios from 'axios';
 
 const directions = ["NORTH", "SOUTH", "EAST", "WEST"];
 
@@ -13,10 +13,13 @@ function DisplayControlButtons({ maps, fetchMapJsonByIndex, setSelectedMapJson, 
   toggleChoosingDestinationPoint, buttonText, setButtonText, destinationButtonText, setDestinationButtonText, 
   isChoosingStartingPoint, isChoosingDestinationPoint, selectedOrientation, setSelectedOrientation }) {
   const [selectedCar, setSelectedCar] = useState('CHOOSE CAR');
+  const [selectedMapId, setSelectedMapId] = useState(null);
 
-  const updateChosenMapImageAndName = (item) => {
-    setSelectedMap(`Map ${item}`);
-    fetchMapJsonByIndex(item - 1); // Adjusted index to fetch the correct map JSON
+  const updateChosenMapImageAndName = (index) => {
+    const map = maps[index - 1]; // Adjusted index to fetch the correct map
+    setSelectedMap(`Map ${index}`);
+    setSelectedMapId(map.id); 
+    fetchMapJsonByIndex(index - 1);
   };
 
   const updateChosenCarAndName = (item) => {
@@ -58,10 +61,15 @@ function DisplayControlButtons({ maps, fetchMapJsonByIndex, setSelectedMapJson, 
     }
 
     try {
-      const response = await axios.post(`http://localhost:5000/graph?start=${buttonText}&target=${destinationButtonText}`, {
-        orientation: selectedOrientation,
-        map: selectedMap,
-      });
+      const selectedMapData = maps.find(map => map.id === selectedMapId); 
+      if (!selectedMapData) {
+        alert('Selected map data not found.');
+        return;
+      }
+
+      const graphData = selectedMapData.data; 
+
+      const response = await axios.post(`http://localhost:5000/graph?start=${buttonText}&target=${destinationButtonText}`, graphData);
 
       if (response.status === 200) {
         alert('Request sent successfully!');
