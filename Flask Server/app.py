@@ -60,6 +60,52 @@ def receive_graph():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+
+# receive_graph request that return the jason file of the map that server got for debugging.
+# @app.route('/graph', methods=['POST'])
+# def receive_graph():
+#     try:
+#         global calculated_path
+        
+#         graph_data = request.json
+#         print("Received graph data:", graph_data)  # Print the JSON graph data
+
+#         graph = Graph()
+
+#         for node in graph_data:
+#             graph.add_vertex(node['id'])
+#         for node in graph_data:
+#             for edge in node['edges']:
+#                 graph.add_edge(node['id'], edge['vertex'], edge['direction'])
+
+#         start = request.args.get('start')
+#         target = request.args.get('target')
+
+#         if not start or not target:
+#             return jsonify({"error": "Start and target parameters are required"}), 400
+
+#         all_paths = graph.find_all_paths(start, target)
+#         shortest_paths = graph.find_shortest_paths(all_paths)
+
+#         if shortest_paths:
+#             path_obj = shortest_paths[0]
+#             calculated_path = {
+#                 "path": path_obj['path']['path'],
+#                 "directions": path_obj['path']['directions']
+#             }
+
+#             # Start a thread to execute the code
+#             threading.Thread(target=execute_code).start()
+#             return jsonify({
+#                 "shortest_path": calculated_path
+#             }), 200
+#         else:
+#             return jsonify({"message": "No paths found"}), 200
+
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 400
+
+
 @app.route('/calculated_path', methods=['GET'])
 def get_calculated_path():
     global calculated_path
