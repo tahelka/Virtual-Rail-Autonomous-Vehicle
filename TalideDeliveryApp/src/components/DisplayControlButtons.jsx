@@ -178,4 +178,3 @@ DisplayControlButtons.propTypes = {
 };
 
 export default DisplayControlButtons;
-
