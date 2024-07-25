@@ -19,8 +19,8 @@
 //#define CAMERA_MODEL_M5STACK_PSRAM
 #define CAMERA_MODEL_AI_THINKER
 
-const char* ssid = "fregl";   //Enter SSID WIFI Name
-const char* password = "04061969";   //Enter WIFI Password
+const char* ssid = "Talide";   //Enter SSID WIFI Name
+const char* password = "1112131415";   //Enter WIFI Password
 
 #if defined(CAMERA_MODEL_WROVER_KIT)
 #define PWDN_GPIO_NUM    -1
@@ -120,6 +120,7 @@ void setup() {
     config.frame_size = FRAMESIZE_VGA;
     config.jpeg_quality = 10;
     config.fb_count = 2;
+    Serial.printf("psram found");
   } else {
     config.frame_size = FRAMESIZE_VGA;
     config.jpeg_quality = 12;

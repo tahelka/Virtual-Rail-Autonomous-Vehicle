@@ -380,7 +380,7 @@ static esp_err_t action_handler(httpd_req_t *req){
                     WheelAct(LOW, LOW, LOW, LOW); // Stop
                     delay(200);
                     WheelAct(high_speed, LOW, LOW, high_speed); // Turn left at high speed
-                    delay(600);
+                    delay(500);
                     WheelAct(LOW, LOW, LOW, LOW); // Stop
                     delay(200);
                     WheelAct(regular_speed, LOW, regular_speed, LOW); // Move forward
@@ -400,17 +400,50 @@ static esp_err_t action_handler(httpd_req_t *req){
                     WheelAct(LOW, LOW, LOW, LOW); // Stop
                     delay(200);
                     WheelAct(LOW, high_speed, high_speed, LOW); // Turn right at high speed
-                    delay(600);
+                    delay(500);
                     WheelAct(LOW, LOW, LOW, LOW); // Stop
                     delay(200);
                     WheelAct(regular_speed, LOW, regular_speed, LOW); // Move forward
                     delay(200);
                     WheelAct(LOW, LOW, LOW, LOW); // Stop
                 } 
+                // Move backward at high speed(cross intersection)
+                else if (strcmp(param, "crossBack") == 0) {
+                    WheelAct(LOW, high_speed, LOW, high_speed); // Move backward at high speed
+                    delay(200);
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                    delay(200);
+                }
                 // Stop
                 else if (strcmp(param, "stop") == 0) {
                     WheelAct(LOW, LOW, LOW, LOW); // Stop
                 } 
+                // turn heavy left
+                else if (strcmp(param, "hleft") == 0) {
+                    WheelAct(high_speed, LOW, LOW, high_speed); // Turn heavy left
+                    delay(100);
+                    WheelAct(regular_speed, LOW, regular_speed, LOW); // Move forward
+                    delay(15);
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                }
+                // turn heavy right
+                else if (strcmp(param, "hright") == 0) {
+                    WheelAct(LOW, high_speed, high_speed, LOW); // Turn heavy right
+                    delay(100);
+                    WheelAct(regular_speed, LOW, regular_speed, LOW); // Move forward
+                    delay(15);
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                } 
+                /*
+                // Move backward
+                else if (strcmp(param, "back") == 0) {
+                    WheelAct(LOW, reverse_speed, LOW, reverse_speed); // Move backward
+                    delay(175);
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                } 
+                */
+
+                /*
                 // Move backward and turn left
                 else if (strcmp(param, "leftBack") == 0) {
                     WheelAct(LOW, reverse_speed, LOW, reverse_speed); // Move backward
@@ -419,6 +452,7 @@ static esp_err_t action_handler(httpd_req_t *req){
                     delay(100);
                     WheelAct(LOW, LOW, LOW, LOW); // Stop
                 } 
+                
                 // Move backward and turn right
                 else if (strcmp(param, "rightBack") == 0) {
                     WheelAct(LOW, reverse_speed, LOW, reverse_speed); // Move backward
@@ -427,6 +461,7 @@ static esp_err_t action_handler(httpd_req_t *req){
                     delay(100);
                     WheelAct(LOW, LOW, LOW, LOW); // Stop
                 } 
+        
                 // Move backward, turn left at high speed
                 else if (strcmp(param, "TurnLeftBack") == 0) {
                     WheelAct(LOW, LOW, LOW, LOW); // Stop
@@ -451,19 +486,7 @@ static esp_err_t action_handler(httpd_req_t *req){
                     delay(600);
                     WheelAct(LOW, LOW, LOW, LOW); // Stop
                 }  
-                // Move backward
-                else if (strcmp(param, "back") == 0) {
-                    WheelAct(LOW, reverse_speed, LOW, reverse_speed); // Move backward
-                    delay(175);
-                    WheelAct(LOW, LOW, LOW, LOW); // Stop
-                } 
-                // Move backward at high speed(cross intersection)
-                else if (strcmp(param, "crossBack") == 0) {
-                    WheelAct(LOW, high_speed, LOW, high_speed); // Move backward at high speed
-                    delay(200);
-                    WheelAct(LOW, LOW, LOW, LOW); // Stop
-                    delay(200);
-                }
+                */
             }
         }
         free(buf);
