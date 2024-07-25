@@ -1,12 +1,7 @@
 import errno
-import http
-from time import sleep
 import cv2
 import urllib.request
 import numpy as np
-from collections import deque
-import time
-import threading
 import select
 import socket
 import urllib.parse
@@ -26,7 +21,9 @@ no_data_received_counter = 20  # Number of times to check for no data received b
 # Define constants for command names
 GO = "go"
 LEFT = "left"
+HEAVY_LEFT = "hleft"
 RIGHT = "right"
+HEAVY_RIGHT = "hright"
 STOP = "stop"
 BACK = "back"
 TURN_LEFT = "turnLeft"
@@ -39,7 +36,7 @@ TURN_RIGHT_back = "TurnRightBack"
 CROSS_back = "crossBack"
 
 # Commands to send
-commands = [GO, LEFT, RIGHT, STOP, CROSS, BACK, TURN_LEFT, TURN_RIGHT, Left_back , Right_back, TURN_LEFT_back, TURN_RIGHT_back, CROSS_back]
+#commands = [GO, LEFT, RIGHT, STOP, CROSS, BACK, TURN_LEFT, TURN_RIGHT, Left_back , Right_back, TURN_LEFT_back, TURN_RIGHT_back, CROSS_back]
 
 def update_value(x):
     pass
@@ -86,9 +83,7 @@ def setup_non_blocking_stream(url):
 
 def get_latest_frame_bytes(sock, buffer, chunk_size=65536, timeout=10, reconnection_attempts=3):
     global no_data_received_counter
-    #last_data_time = time.time()
     latest_frame = None
-    check_timer = False
 
     while True:
         ready = select.select([sock], [], [], 0.1)[0]
@@ -97,7 +92,6 @@ def get_latest_frame_bytes(sock, buffer, chunk_size=65536, timeout=10, reconnect
                 new_bytes = sock.recv(chunk_size)
                 if new_bytes:
                     buffer += new_bytes
-                    #last_data_time = time.time()  # Update the last data received time
                     no_data_received_counter = 20
                 else:
                     print("Connection possibly closed by the server decrementing the restart counter...")
@@ -110,29 +104,7 @@ def get_latest_frame_bytes(sock, buffer, chunk_size=65536, timeout=10, reconnect
             # Restart the entire program
             print("Restarting the program... no new data received for a long time")
             os.execv(sys.executable, ['python'] + sys.argv)
-            # Check if no data has been received for the timeout period
-            # if time.time() - last_data_time > timeout:
-            #     print("No new data received for a long time clearing buffer Attempting to reconnect...")
-            #     buffer = b""  # Clear the buffer
-                #for attempt in range(reconnection_attempts):
-                 # try:
-                      # Close and reopen the socket to reconnect
-                    #    sock.close()
-                        #set_fps(current_fps)  # Set the initial FPS
-                      #  sock = setup_non_blocking_stream(stream_url)
-                    #    print(f"Reconnected on attempt {attempt + 1}")
-                    #    buffer = b""  # Clear the buffer
-                #         last_data_time = time.time()  # Reset the timer
-                #         check_timer = False
-                #         break
-                #   except socket.error as e:
-                #         print(f"Reconnection attempt {attempt + 1} failed: {e}")
-                #         time.sleep(1)  # Wait before retrying
-                # else:
-                #     print("All reconnection attempts failed.")
-                #     return None, buffer
-
-##################check this part of the code later##################
+          
         while True:
             start_marker = buffer.rfind(b'\xff\xd8')  # JPEG start of image
             end_marker = buffer.rfind(b'\xff\xd9')    # JPEG end of image
@@ -152,22 +124,6 @@ def get_latest_frame_bytes(sock, buffer, chunk_size=65536, timeout=10, reconnect
                 break
 
         return latest_frame, buffer
-################## up to here check this part of the code later##################
-
-def get_stream_bytes(stream, bytes):
-    try:
-        bytes += stream.read(1024)
-    except http.client.IncompleteRead as e:
-        # Ignore incomplete reads and continue
-        pass
-    a = bytes.find(b'\xff\xd8')
-    b = bytes.find(b'\xff\xd9')
-    if a != -1 and b != -1:
-        jpg = bytes[a:b+2]
-        bytes = bytes[b+2:]
-        return jpg, bytes
-    return None, bytes
-
 
 def get_frame_from_bytes(jpg):
     if jpg:
@@ -271,21 +227,16 @@ def opposite_command(command):
         return CROSS_back
     return command
 
-def clear_queue(queue):
-    while not queue.empty():
-        queue.get()
-
 def process_frames(sock, bytes):
     frame_counter = 0  # Initialize a frame counter
-    command_interval = 1  # Send command every 7 frames
+    command_interval = 1  # Send command every 1 frames
     send_commands = True  # Initialize the flag to True
     previous_marker = -1
-    # Initialize the command queue
-    #command_queue = deque(maxlen=50)
+    path = 1
+    consecutive_left = 10   #counter for when its cosidered stuck on left turn- need to perform heavy left turn when 0
+    consecutive_right = 10  #counter for when its cosidered stuck on right turn- need to perform heavy right turn when 0
     threshold_value, contrast_factor, contrast_radius = get_trackbar_values()
     while True:
-        #print(f"Queue size: {frame_queue.qsize()}")  # Print the size of the queue
-        #frame = frame_queue.get()
         jpg, bytes = get_latest_frame_bytes(sock, bytes) # Get the latest frame bytes
         frame = get_frame_from_bytes(jpg) # Get the frame from the bytes
         if frame is not None:
@@ -298,72 +249,121 @@ def process_frames(sock, bytes):
                 frame_counter += 1  # Increment the frame counter
                 command_sent = None  # Initialize the command sent to None
                 if id_of_marker is not None:
-                            if id_of_marker[0] == 0:
-                                command_sent = TURN_LEFT
-                            elif id_of_marker[0] == 1:
-                                command_sent = TURN_RIGHT
-                            elif id_of_marker[0] == 2:
-                                command_sent = TURN_RIGHT
-                            elif id_of_marker[0] == 3:
-                                command_sent = send_command(STOP)
-                                break
-                            elif id_of_marker[0] == 4:
-                                command_sent = send_command(STOP)
-                                break
-                            elif id_of_marker[0] == 5:
-                                command_sent = CROSS
-                            elif id_of_marker[0] == 6:
-                                command_sent = TURN_RIGHT
-                            elif id_of_marker[0] == 7:
-                                command_sent = TURN_LEFT
-                            elif id_of_marker[0] == 8:
-                                command_sent = TURN_RIGHT
-                            elif id_of_marker[0] == 9:
-                                command_sent = TURN_LEFT
+                            if path == 1:
+                                if id_of_marker[0] == 0:
+                                    command_sent = TURN_RIGHT
+                                elif id_of_marker[0] == 1:
+                                    command_sent = TURN_LEFT
+                                elif id_of_marker[0] == 2:
+                                    command_sent = TURN_RIGHT
+                                elif id_of_marker[0] == 3:
+                                    command_sent = send_command(STOP)
+                                    break
+                                elif id_of_marker[0] == 4:
+                                    command_sent = send_command(STOP)
+                                    break
+                                elif id_of_marker[0] == 5:
+                                    command_sent = CROSS
+                                elif id_of_marker[0] == 6:
+                                    command_sent = TURN_LEFT
+                                elif id_of_marker[0] == 7:
+                                    command_sent = TURN_RIGHT
+                                elif id_of_marker[0] == 8:
+                                    command_sent = TURN_RIGHT
+                                elif id_of_marker[0] == 9:
+                                    command_sent = TURN_LEFT
+
+                            elif path == 2:
+                                if id_of_marker[0] == 0:
+                                    command_sent = CROSS
+                                elif id_of_marker[0] == 1:
+                                    command_sent = TURN_RIGHT
+                                elif id_of_marker[0] == 2:
+                                    command_sent = TURN_RIGHT
+                                elif id_of_marker[0] == 3:
+                                    command_sent = send_command(STOP)
+                                    break
+                                elif id_of_marker[0] == 4:
+                                    command_sent = send_command(STOP)
+                                    break
+                                elif id_of_marker[0] == 5:
+                                    command_sent = CROSS
+                                elif id_of_marker[0] == 6:
+                                    command_sent = TURN_RIGHT
+                                elif id_of_marker[0] == 7:
+                                    command_sent = TURN_LEFT
+                                elif id_of_marker[0] == 8:
+                                    command_sent = TURN_RIGHT
+                                elif id_of_marker[0] == 9:
+                                    command_sent = TURN_LEFT
+
+                            elif path == 3:
+                                if id_of_marker[0] == 0:
+                                    command_sent = CROSS
+                                elif id_of_marker[0] == 1:
+                                    command_sent = TURN_LEFT
+                                elif id_of_marker[0] == 2:
+                                    command_sent = TURN_LEFT
+                                elif id_of_marker[0] == 3:
+                                    command_sent = send_command(STOP)
+                                    break
+                                elif id_of_marker[0] == 4:
+                                    command_sent = send_command(STOP)
+                                    break
+                                elif id_of_marker[0] == 5:
+                                    command_sent = CROSS
+                                elif id_of_marker[0] == 6:
+                                    command_sent = TURN_LEFT
+                                elif id_of_marker[0] == 7:
+                                    command_sent = TURN_RIGHT
+                                elif id_of_marker[0] == 8:
+                                    command_sent = TURN_LEFT
+                                elif id_of_marker[0] == 9:
+                                    command_sent = TURN_RIGHT
 
                             # Check if the current marker is the same as the previous marker
-                            if previous_marker == id_of_marker[0]:
+                            if previous_marker == id_of_marker[0] and command_sent is not CROSS:
                                 # If it is, do not send the command
                                 command_sent = None
                             elif send_commands == True:
                                 # If it is not, send the command
                                 send_command(command_sent)
-                                #sleep(0.5)
                                 previous_marker = id_of_marker[0]
-                            #clear_queue(frame_queue) #clear the frame queue so the vechicle will track real time frames right after turning
+                                
+                            consecutive_left = 10
+                            consecutive_right = 10
                 elif frame_counter == command_interval and id_of_marker is None:  # If the counter reaches the command interval
                     previous_marker = -1  # Reset the previous marker
                     if send_commands:  # Only send commands if the flag is True
                         if id_of_marker is None and foundContour == True:
                             if offset < -50:
                                 command_sent = send_command(LEFT)
+                                consecutive_left -=1
+                                consecutive_right = 10
                             elif offset > 50:
                                 command_sent = send_command(RIGHT)
+                                consecutive_right -=1
+                                consecutive_left = 10
                             else:
                                command_sent = send_command(GO)
+                               consecutive_left = 10
+                               consecutive_right = 10
                         elif id_of_marker is None and foundContour == False: # If the flag is False, start backtracking
                                 command_sent = None
                                 send_command(CROSS_back)
-                                #send_command(opposite_command(command_queue.pop()))
-                                #send_command(STOP)
-                                #clear_queue(frame_queue)  # Clear the frame queue so the vechicle will track real time frames no need for past frames when trying to return to the track
+                                consecutive_left = 10
+                                consecutive_right = 10
+                               
                     else:  #emergency stop
                         command_sent = send_command(STOP)
                 if frame_counter >= command_interval:
                     frame_counter = 0
-                # Inside your main loop, after a command is sent:
-                
-                #if command_sent is not None and command_sent != STOP:
-                    # Add the command to the start of the queue
-                    #command_queue.appendleft(command_sent)
-
-                # Reset the last_turn_command if the current command if no marker is detected  
-                # Draw the command sent on the frame
-                #command_text = f"Command: {command_sent if command_sent else 'No new command'}"
-                #cv2.putText(frame, command_text, (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-                # Draw the frame counter on the frame
-                #counter_text = f"Frame Counter: {frame_counter}"
-                #cv2.putText(frame, counter_text, (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                if consecutive_left == 0:   # if stuck on left turn perform strong left turn
+                    send_command(HEAVY_LEFT)
+                    consecutive_left = 10
+                elif consecutive_right == 0:  # if stuck on right turn perform strong right turn
+                    send_command(HEAVY_RIGHT)
+                    consecutive_right = 10
 
                 show_frames(binary_thresh, frame)
                 key = cv2.waitKey(1)
@@ -372,20 +372,13 @@ def process_frames(sock, bytes):
                     break
                 elif key == ord('d'):  # If the "d" key is pressed, toggle the flag
                     send_commands = not send_commands
-                #if command_sent is not None and command_sent != STOP:
-                   # print(f"Queue size: {frame_queue.qsize()}")  # Print the size of the queue
-
 
 def main():
 
     set_fps(current_fps)  # Set the initial FPS
-    #stream_url = 'http://192.168.2.100:81/stream'
     bytes = b''
     
     sock = setup_non_blocking_stream(stream_url)
-    #frame_queue = queue.Queue(maxsize=100)  # Set the maximum size of the queue
-    #stream = urllib.request.urlopen(stream_url)
-    #bytes = b''
     try:
         process_frames(sock, bytes)
     finally:
