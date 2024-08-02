@@ -60,9 +60,78 @@ def receive_graph():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-@app.route('/graph', methods=['GET'])
+@app.route('/api/graph', methods=['GET'])
 def get_route_instructions():
+    try:
+        # Extract query parameters
+        mapid = request.args.get('mapid')
+        start = request.args.get('start')
+        target = request.args.get('target')
+        orientation = request.args.get('orientation')
+        
+        # Validate query parameters
+        if not mapid or not start or not target or not orientation:
+            return jsonify({"error": "mapid, start, target, and orientation parameters are required"}), 400
+        
+        # Determine the current working directory
+        current_directory = os.getcwd()
+        print(f"Current working directory: {current_directory}")
 
+        # Construct the absolute path to the "maps" folder
+        maps_folder = os.path.join(current_directory, 'maps')
+        
+        # Construct the full path to the JSON file
+        json_filename = f"map_{mapid}.json"
+        json_filepath = os.path.join(maps_folder, json_filename)
+        
+        # Print the path for debugging
+        print(f"Checking file at: {json_filepath}")
+        
+        # Check if the file exists
+        if os.path.isfile(json_filepath):
+            print(f"File found: {json_filepath}")
+            # Read and parse the JSON file
+            with open(json_filepath, 'r') as file:
+                graph_data = json.load(file)
+            # Print the loaded data for debugging
+            print(f"Loaded data: {graph_data}")
+            
+            # Initialize the graph and populate it with the data
+            graph = Graph()
+            for node in graph_data:
+                graph.add_vertex(node['id'])
+            for node in graph_data:
+                for edge in node['edges']:
+                    graph.add_edge(node['id'], edge['vertex'], edge['direction'])
+            
+            # Validate start and target parameters
+            if not start or not target:
+                return jsonify({"error": "Start and target parameters are required"}), 400
+            
+            # Find all paths and shortest paths
+            all_paths = graph.find_all_paths(start, target)
+            shortest_paths = graph.find_shortest_paths(all_paths)
+            
+            # Return the shortest path
+            if shortest_paths:
+                path_obj = shortest_paths[0]
+                calculated_path = {
+                    "path": path_obj['path']['path'],
+                    "directions": path_obj['path']['directions'],
+                    "orientation": orientation
+                }
+                return jsonify({
+                    "shortest_path": calculated_path
+                }), 200
+            else:
+                return jsonify({"message": "No paths found"}), 404
+
+        else:
+            print(f"File not found: {json_filepath}")
+            return jsonify({"message": "File not found"}), 404
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 # receive_graph request that return the jason file of the map that server got for debugging.
 # @app.route('/graph', methods=['POST'])
@@ -137,7 +206,7 @@ def save_map():
             for edge in node['edges']:
                 edge['vertex'] = str(edge['vertex'])
 
-        map_name = f'map_{uuid.uuid4()}.json'
+        map_name = f'{uuid.uuid4()}.json'
         file_path = os.path.join(app.config['MAPS_FOLDER'], map_name)
         
         # Save the map data with proper formatting

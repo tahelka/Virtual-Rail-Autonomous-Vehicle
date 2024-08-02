@@ -82,13 +82,17 @@ const ControlPanel = () => {
       return;
     }
 
-    const url = `http://localhost:5000/graph?mapid=${selectedMap}&start=${startingPoint}&target=${destinationPoint}&orientation=${orientation}`;
+    const url = `http://localhost:5000/api/graph?mapid=${selectedMap}&start=${startingPoint}&target=${destinationPoint}&orientation=${orientation}`;
 
     try {
       const response = await axios.get(url);
+
+      console.log(response);
+
       setSnackbarSeverity("success");
       setSnackbarMessage("Request successful!");
     } catch (error) {
+      console.log(error);
       setSnackbarSeverity("error");
       setSnackbarMessage("Error fetching graph data.");
     } finally {
@@ -225,10 +229,10 @@ const ControlPanel = () => {
                   {...field}
                   label="Vehicle Orientation"
                 >
-                  <MenuItem value={1}>North</MenuItem>
-                  <MenuItem value={2}>East</MenuItem>
-                  <MenuItem value={3}>South</MenuItem>
-                  <MenuItem value={4}>West</MenuItem>
+                  <MenuItem value={"north"}>North</MenuItem>
+                  <MenuItem value={"east"}>East</MenuItem>
+                  <MenuItem value={"south"}>South</MenuItem>
+                  <MenuItem value={"west"}>West</MenuItem>
                 </Select>
                 {errors.orientation && (
                   <FormHelperText>{errors.orientation.message}</FormHelperText>
