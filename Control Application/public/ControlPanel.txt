@@ -1,0 +1,5 @@
+Choose map - droplist
+Starting point - droplist
+Destination point - droplist
+Vehicle Orientation - droplist
+Start - button

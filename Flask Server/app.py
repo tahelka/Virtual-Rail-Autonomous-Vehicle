@@ -50,7 +50,10 @@ def receive_graph():
             }
 
             # Start a thread to execute the code
-            threading.Thread(target=execute_code).start()
+            # threading.Thread(target=execute_code).start()
+
+            #send post request with the relevant data to denis's server
+
             return jsonify({
                 "shortest_path": calculated_path
             }), 200
