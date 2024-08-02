@@ -20,4 +20,4 @@ This project aims to develop an autonomous line-following car that navigates pre
 - **User Interaction**: Users can specify the vehicle's final destination and transmit this to the server.
 - **Telemetry and Statistics Display**: Shows real-time data and performance metrics of the vehicle.
 
-![Autonomous Vehicle Image](Virtual-Rail-Autonomous-Vehicle/AttachedDocuments/logo.jpg)
+![Autonomous Vehicle Image](AttachedDocuments/logo.jpg)
