@@ -16,8 +16,10 @@ This project aims to develop an autonomous line-following car that navigates pre
 - **Telemetry Management**: Receives, formats, and stores telemetry data from the vehicle.
 
 ### 3. Web Application
-- **Road Map Display**: Allows users to select the vehicle's destination on a map.
+- **Road Map Display**: Provides users with a visually captivating interface for navigating routes on the map.
 - **User Interaction**: Users can specify the vehicle's final destination and transmit this to the server.
 - **Telemetry and Statistics Display**: Shows real-time data and performance metrics of the vehicle.
 
-![Car]([image.png](https://probots.co.in/pub/media/catalog/product/cache/d8ddd0f9b0cd008b57085cd218b48832/d/i/diy_smart_car_robot_esp32_cam_car_kit.jpg))
+
+
+![Autonomous Vehicle Image](logo.jpg)
