@@ -1,0 +1,51 @@
+[
+  {
+    "id": "1",
+    "edges": [
+      {
+        "vertex": "2",
+        "direction": "north"
+      }
+    ]
+  },
+  {
+    "id": "2",
+    "edges": [
+      {
+        "vertex": "3",
+        "direction": "east"
+      },
+      {
+        "vertex": "1",
+        "direction": "south"
+      }
+    ]
+  },
+  {
+    "id": "3",
+    "edges": [
+      {
+        "vertex": "2",
+        "direction": "west"
+      }
+    ]
+  },
+  {
+    "id": "4",
+    "edges": [
+      {
+        "vertex": "2",
+        "direction": "west"
+      }
+    ]
+  },
+  {
+    "id": "5",
+    "edges": [
+      {
+        "vertex": "2",
+        "direction": "west"
+      }
+    ]
+  }
+]

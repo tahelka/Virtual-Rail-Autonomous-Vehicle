@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ThreeJS Landing Page</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css"
+    />
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+      .navbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background-color: #222;
+        color: #fff;
+      }
+      .nav-logo {
+        font-size: 1.5rem;
+      }
+      .nav-menu ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+      }
+      .nav-menu ul li {
+        margin: 0 1rem;
+      }
+      .nav-link {
+        color: #fff;
+        text-decoration: none;
+      }
+      .sign-up-btn {
+        background-color: #f39c12;
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+      }
+      .hamburger {
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background: none;
+        border: none;
+        cursor: pointer;
+        width: 2rem;
+        height: 2rem;
+      }
+      .hamburger span {
+        width: 1.5rem;
+        height: 0.2rem;
+        background: #fff;
+        margin: 0.2rem 0;
+      }
+      .hero-section {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background: #000;
+        color: #fff;
+      }
+      .hero-text {
+        text-align: center;
+      }
+      .title {
+        font-size: 2.5rem;
+      }
+      .cta-btn {
+        margin-top: 1rem;
+        background-color: #f39c12;
+        color: #fff;
+        border: none;
+        padding: 0.5rem 1.5rem;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .canvas {
+        position: relative;
+        width: 100%;
+        height: 100%;
+      }
+      canvas {
+        display: block;
+      }
+      @media (max-width: 768px) {
+        .hamburger {
+          display: flex;
+        }
+        .nav-menu {
+          display: none;
+        }
+        .hamburger.active + .nav-menu {
+          display: block;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <nav class="navbar">
+        <div class="nav-logo">
+          <i class="fa-solid fa-rocket nav-logo-icon"></i> Astartes
+        </div>
+        <div class="nav-menu">
+          <ul>
+            <li><a href="#" class="nav-link">Explore</a></li>
+            <li><a href="#" class="nav-link">Create</a></li>
+            <li><a href="#" class="nav-link sign-up-btn">Sign Up</a></li>
+          </ul>
+        </div>
+        <button class="hamburger">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </nav>
+    </header>
+    <main>
+      <section class="hero-section">
+        <div class="container">
+          <div class="hero-text">
+            <h1 class="title">Explore a galaxy<br />full of wonder</h1>
+            <p class="subtext">
+              Lorem ipsum dolor, sit amet consectetur adipisicing elit. Eveniet
+              nam quod dolores dolor aliquam ipsam. Explicabo aspernatur
+              veritatis expedita iure tenetur magnam, maiores delectus animi!
+            </p>
+            <button class="cta-btn">Begin Exploring</button>
+          </div>
+          <div class="canvas">
+            <canvas class="webgl"></canvas>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Three.js and GLTFLoader scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.147.0/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.147.0/examples/jsm/loaders/GLTFLoader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.3/gsap.min.js"></script>
+    <script>
+      import * as THREE from "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.147.0/three.min.js";
+      import { GLTFLoader } from "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.147.0/examples/jsm/loaders/GLTFLoader.js";
+      import gsap from "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.3/gsap.min.js";
+
+      // Grab DOM elements
+      const canvas = document.querySelector(".webgl");
+      const hamburger = document.querySelector(".hamburger");
+
+      // Create a scene
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x111111);
+
+      // Add lighting to the scene
+      const light = new THREE.PointLight(0xffffff, 1, 100);
+      light.position.set(0, 10, 10);
+      scene.add(light);
+
+      // Add a camera to the scene
+      const camera = new THREE.PerspectiveCamera(
+        45,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        100
+      );
+      camera.position.z = 5.5;
+      scene.add(camera);
+
+      // Load the 3D model
+      const loader = new GLTFLoader();
+      loader.load(
+        "car_project.glb", // replace with your .glb file path
+        (gltf) => {
+          const model = gltf.scene;
+          scene.add(model);
+          model.scale.set(1, 1, 1); // Adjust the scale as needed
+          model.position.set(0, 0, 0);
+        },
+        undefined,
+        (error) => {
+          console.error("An error happened while loading the model:", error);
+        }
+      );
+
+      // Set viewport size
+      const sizes = {
+        width: window.innerWidth,
+        height: window.innerHeight,
+      };
+
+      // Render the scene
+      const renderer = new THREE.WebGLRenderer({ canvas });
+      renderer.setSize(sizes.width, sizes.height);
+      renderer.setPixelRatio(window.devicePixelRatio);
+
+      // Handle orbit controls
+      const controls = new THREE.OrbitControls(camera, canvas);
+      controls.enableDamping = true;
+      controls.enablePan = false;
+      controls.minDistance = 5.75;
+      controls.maxDistance = 8;
+
+      // Resize
+      window.addEventListener("resize", () => {
+        sizes.width = window.innerWidth;
+        sizes.height = window.innerHeight;
+        camera.aspect = sizes.width / sizes.height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(sizes.width, sizes.height);
+      });
+
+      // Animation loop
+      function animate() {
+        if (scene.children.length > 1) {
+          // Ensure model is loaded
+          scene.children[1].rotation.y += 0.005;
+        }
+
+        controls.update();
+        renderer.render(scene, camera);
+        window.requestAnimationFrame(animate);
+      }
+
+      animate();
+
+      // Event listener for the hamburger
+      hamburger.addEventListener("click", function () {
+        this.classList.toggle("active");
+      });
+
+      // GSAP animation
+      const tl = gsap.timeline({
+        defaults: {
+          duration: 1,
+        },
+      });
+
+      tl.from(".nav-logo", {
+        y: "-100%",
+        opacity: 0,
+      })
+        .from(".nav-menu ul li", {
+          y: "-100%",
+          opacity: 0,
+          stagger: 0.09,
+        })
+        .from(
+          ".hamburger",
+          {
+            y: "-100%",
+            opacity: 0,
+          },
+          "-=1.5"
+        )
+        .fromTo(
+          { scale: 0 },
+          { scale: 1 },
+          { duration: 1, ease: "elastic.out(1, 0.3)" }, // Ensure smooth scaling for model
+          "-=0.7"
+        )
+        .from(".title", {
+          y: "100%",
+          opacity: 0,
+        })
+        .from(".subtext", {
+          y: "100%",
+          opacity: 0,
+        })
+        .from(".cta-btn", {
+          y: "100%",
+          opacity: 0,
+        });
+    </script>
+  </body>
+</html>

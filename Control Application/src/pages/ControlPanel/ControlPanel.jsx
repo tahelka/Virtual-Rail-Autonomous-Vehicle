@@ -62,6 +62,15 @@ const ControlPanel = () => {
   if (isLoading) return <p>Loading...</p>;
   if (error) return <p>Error fetching maps.</p>;
 
+  // Sort maps by creation_time (ascending order) and map them to "Map 1", "Map 2", etc.
+  const sortedMaps = [...maps].sort(
+    (a, b) => a.creation_time - b.creation_time
+  );
+  const mapOptions = sortedMaps.map((map, index) => ({
+    id: map.id,
+    name: `Map ${index + 1}`,
+  }));
+
   const onSubmit = async (data) => {
     const { selectedMap, startingPoint, destinationPoint, orientation } = data;
 
@@ -92,13 +101,13 @@ const ControlPanel = () => {
   };
 
   const selectedMap = watch("selectedMap");
-  const nodes = maps?.find((map) => map.id === selectedMap)?.data || [];
+  const nodes = sortedMaps.find((map) => map.id === selectedMap)?.data || [];
 
   return (
-    <Box sx={{ padding: 2, maxWidth: 600, margin: "auto" }}>
-      <Typography variant="h4" gutterBottom>
+    <Box sx={{ padding: 2, maxWidth: 600, margin: "auto", minWidth: 300 }}>
+      {/* <Typography variant="h4" gutterBottom>
         Control Panel
-      </Typography>
+      </Typography> */}
       <Box
         component="form"
         sx={{ display: "flex", flexDirection: "column", gap: 2 }}
@@ -124,9 +133,9 @@ const ControlPanel = () => {
                     setValue("destinationPoint", "");
                   }}
                 >
-                  {maps.map((map) => (
+                  {mapOptions.map((map) => (
                     <MenuItem key={map.id} value={map.id}>
-                      {map.id}
+                      {map.name}
                     </MenuItem>
                   ))}
                 </Select>
@@ -233,7 +242,7 @@ const ControlPanel = () => {
           variant="contained"
           color="primary"
           type="submit"
-          sx={{ alignSelf: "flex-start" }}
+          sx={{ alignSelf: "flex-start", minWidth: 300 }}
         >
           Start
         </Button>

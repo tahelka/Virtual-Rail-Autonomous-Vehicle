@@ -4,7 +4,7 @@ import Drawer from "@mui/material/Drawer";
 import Divider from "@mui/material/Divider";
 import Logo from "../Logo/Logo";
 import DrawerList from "../DrawerList/DrawerList";
-import { Box, Typography } from "@mui/material";
+import { Box } from "@mui/material";
 import { Outlet } from "react-router-dom";
 
 const drawerWidth = 240;

@@ -49,10 +49,7 @@ def receive_graph():
                 "directions": path_obj['path']['directions']
             }
 
-            # Start a thread to execute the code
-            # threading.Thread(target=execute_code).start()
-
-            #send post request with the relevant data to denis's server
+            
 
             return jsonify({
                 "shortest_path": calculated_path
@@ -62,6 +59,9 @@ def receive_graph():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
+@app.route('/graph', methods=['GET'])
+def get_route_instructions():
 
 
 # receive_graph request that return the jason file of the map that server got for debugging.
