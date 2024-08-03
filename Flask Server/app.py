@@ -118,7 +118,8 @@ def get_route_instructions():
                 calculated_path = {
                     "path": path_obj['path']['path'],
                     "directions": path_obj['path']['directions'],
-                    "orientation": orientation
+                    "orientation": orientation,
+                    "mapid": mapid
                 }
                 return jsonify({
                     "shortest_path": calculated_path
@@ -155,12 +156,8 @@ def save_map():
     try:
         map_data = request.json
 
-        print(map_data)
-
         map_name = f'{uuid.uuid4()}.json'
-        print("1")
         file_path = os.path.join(app.config['MAPS_FOLDER'], "map_" + map_name)
-        print("2")
         
         # Save the map data with proper formatting
         with open(file_path, 'w') as file:

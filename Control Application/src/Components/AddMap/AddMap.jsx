@@ -12,6 +12,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import CustomSnackbar from "../../Components/CustomSnackbar/CustomSnackbar";
+import axios from "axios";
 
 const AddMap = () => {
   const [vertices, setVertices] = useState([]);
@@ -97,17 +98,44 @@ const AddMap = () => {
     setDirection("");
   };
 
-  const handleSaveMap = () => {
-    console.log(vertices);
+  const handleSaveMap = async () => {
+    try {
+      // Log vertices to verify
+      console.log(vertices);
 
-    setSnackbarSeverity("success");
-    setSnackbarMessage("Map created successfully");
-    setSnackbarOpen(true);
+      // Make sure vertices is not empty
+      if (vertices.length === 0) {
+        console.error("Vertices array is empty.");
+        return;
+      }
 
-    // reset the state
-    setVertices([]);
-    setVertexId("");
-    setConnectedVertexId("");
+      // Send vertices as POST request body using Axios
+      const response = await axios.post(
+        "http://localhost:5000/api/maps/save",
+        vertices
+      );
+
+      // Check if request was successful
+      if (response.status !== 200) {
+        throw new Error("Failed to save map.");
+      }
+
+      // If successful, set snackbar success message
+      setSnackbarSeverity("success");
+      setSnackbarMessage("Map created successfully");
+      setSnackbarOpen(true);
+
+      // Reset the state
+      setVertices([]);
+      setVertexId("");
+      setConnectedVertexId("");
+    } catch (error) {
+      console.error("Error saving map:", error);
+      // Set snackbar error message
+      setSnackbarSeverity("error");
+      setSnackbarMessage("Failed to save map");
+      setSnackbarOpen(true);
+    }
   };
 
   return (
