@@ -12,34 +12,44 @@ import {
   ListItemText,
   Divider,
 } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 
 const AllMapsDisplay = () => {
-  const [maps, setMaps] = useState([]);
+  const fetchMaps = async () => {
+    const { data } = await axios.get("http://localhost:5000/api/maps");
+    return data;
+  };
 
-  useEffect(() => {
-    // Fetch data from API using Axios
-    axios
-      .get("http://localhost:5000/api/maps")
-      .then((response) => {
-        setMaps(response.data);
-      })
-      .catch((error) => {
-        console.error("Error fetching data:", error);
-      });
-  }, []);
+  const {
+    data: maps,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["maps"],
+    queryFn: fetchMaps,
+  });
 
   const handleDelete = (mapId) => {
-    // Perform delete operation using Axios
     axios
       .delete(`http://localhost:5000/api/maps/delete/${mapId}`)
       .then((response) => {
         console.log(`Map with ID ${mapId} deleted successfully.`);
-        // Update state or handle any other action after deletion
+        // Optionally, you can refetch the data after deletion
       })
       .catch((error) => {
         console.error(`Error deleting map with ID ${mapId}:`, error);
       });
   };
+
+  if (isLoading) {
+    return <Typography variant="h6">Loading maps...</Typography>;
+  }
+
+  if (error) {
+    return (
+      <Typography variant="h6">Error fetching maps: {error.message}</Typography>
+    );
+  }
 
   return (
     <Grid container spacing={2} alignItems="flex-start">
@@ -81,7 +91,7 @@ const AllMapsDisplay = () => {
             <CardActions>
               <Button
                 variant="contained"
-                color="error" // You can adjust the color as per your theme
+                color="error" // Adjust color as per your theme
                 onClick={() => handleDelete(map.id)}
               >
                 Delete

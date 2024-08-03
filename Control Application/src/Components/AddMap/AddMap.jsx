@@ -13,8 +13,11 @@ import {
 } from "@mui/material";
 import CustomSnackbar from "../../Components/CustomSnackbar/CustomSnackbar";
 import axios from "axios";
+import { useQueryClient } from "@tanstack/react-query";
 
 const AddMap = () => {
+  const queryClient = useQueryClient();
+
   const [vertices, setVertices] = useState([]);
   const [vertexId, setVertexId] = useState("");
   const [connectedVertexId, setConnectedVertexId] = useState("");
@@ -124,6 +127,9 @@ const AddMap = () => {
       setSnackbarSeverity("success");
       setSnackbarMessage("Map created successfully");
       setSnackbarOpen(true);
+
+      // Invalidate "maps" query
+      queryClient.invalidateQueries("maps");
 
       // Reset the state
       setVertices([]);
