@@ -59,8 +59,8 @@ const ControlPanel = () => {
     }
   }, [watch("selectedMap"), maps, setValue]);
 
-  if (isLoading) return <p>Loading...</p>;
-  if (error) return <p>Error fetching maps.</p>;
+  if (isLoading) return <span>Loading...</span>;
+  if (error) return <span>Error fetching maps.</span>;
 
   // Sort maps by creation_time (ascending order) and map them to "Map 1", "Map 2", etc.
   const sortedMaps = [...maps].sort(

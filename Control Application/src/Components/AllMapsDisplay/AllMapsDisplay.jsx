@@ -7,6 +7,10 @@ import {
   CardContent,
   Typography,
   Grid,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
 } from "@mui/material";
 
 const AllMapsDisplay = () => {
@@ -27,7 +31,7 @@ const AllMapsDisplay = () => {
   const handleDelete = (mapId) => {
     // Perform delete operation using Axios
     axios
-      .delete(`http://localhost:5000/api/maps/${mapId}`)
+      .delete(`http://localhost:5000/api/maps/delete/${mapId}`)
       .then((response) => {
         console.log(`Map with ID ${mapId} deleted successfully.`);
         // Update state or handle any other action after deletion
@@ -38,8 +42,8 @@ const AllMapsDisplay = () => {
   };
 
   return (
-    <Grid container spacing={2}>
-      <Grid item>
+    <Grid container spacing={2} alignItems="flex-start">
+      <Grid item xs={12}>
         <Typography variant="h5" gutterBottom>
           All available maps
         </Typography>
@@ -57,22 +61,22 @@ const AllMapsDisplay = () => {
               </Typography>
               <Typography variant="body2">
                 <strong>Data:</strong>
-                <ul>
-                  {map.data.map((item) => (
-                    <li key={item.id}>
-                      Vertex {item.id}
-                      <ul>
-                        {item.edges.map((edge, index) => (
-                          <li key={index}>
-                            {/* Direction: {edge.direction}, Vertex: {edge.vertex} */}
-                            {edge.vertex} connected from {edge.direction}
-                          </li>
-                        ))}
-                      </ul>
-                    </li>
-                  ))}
-                </ul>
               </Typography>
+              <List>
+                {map.data.map((item) => (
+                  <ListItem key={item.id}>
+                    <ListItemText primary={`Vertex ${item.id}`} />
+                    <Typography variant="body2">
+                      {item.edges.map((edge, index) => (
+                        <span key={index}>
+                          {edge.vertex} connected from {edge.direction}
+                          {index !== item.edges.length - 1 && ", "}
+                        </span>
+                      ))}
+                    </Typography>
+                  </ListItem>
+                ))}
+              </List>
             </CardContent>
             <CardActions>
               <Button

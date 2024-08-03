@@ -12,53 +12,53 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 # Global variable to store the calculated path
-calculated_path = None
+# calculated_path = None
 
-def execute_code():
-    while(True):
-        print("Executing code...")
-        time.sleep(1)
+# def execute_code():
+#     while(True):
+#         print("Executing code...")
+#         time.sleep(1)
 
-@app.route('/graph', methods=['POST'])
-def receive_graph():
-    try:
-        global calculated_path
+# @app.route('/graph', methods=['POST'])
+# def receive_graph():
+#     try:
+#         global calculated_path
         
-        graph_data = request.json
-        graph = Graph()
+#         graph_data = request.json
+#         graph = Graph()
 
-        for node in graph_data:
-            graph.add_vertex(node['id'])
-        for node in graph_data:
-            for edge in node['edges']:
-                graph.add_edge(node['id'], edge['vertex'], edge['direction'])
+#         for node in graph_data:
+#             graph.add_vertex(node['id'])
+#         for node in graph_data:
+#             for edge in node['edges']:
+#                 graph.add_edge(node['id'], edge['vertex'], edge['direction'])
 
-        start = request.args.get('start')
-        target = request.args.get('target')
+#         start = request.args.get('start')
+#         target = request.args.get('target')
 
-        if not start or not target:
-            return jsonify({"error": "Start and target parameters are required"}), 400
+#         if not start or not target:
+#             return jsonify({"error": "Start and target parameters are required"}), 400
 
-        all_paths = graph.find_all_paths(start, target)
-        shortest_paths = graph.find_shortest_paths(all_paths)
+#         all_paths = graph.find_all_paths(start, target)
+#         shortest_paths = graph.find_shortest_paths(all_paths)
 
-        if shortest_paths:
-            path_obj = shortest_paths[0]
-            calculated_path = {
-                "path": path_obj['path']['path'],
-                "directions": path_obj['path']['directions']
-            }
+#         if shortest_paths:
+#             path_obj = shortest_paths[0]
+#             calculated_path = {
+#                 "path": path_obj['path']['path'],
+#                 "directions": path_obj['path']['directions']
+#             }
 
             
 
-            return jsonify({
-                "shortest_path": calculated_path
-            }), 200
-        else:
-            return jsonify({"message": "No paths found"}), 200
+#             return jsonify({
+#                 "shortest_path": calculated_path
+#             }), 200
+#         else:
+#             return jsonify({"message": "No paths found"}), 200
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 400
 
 @app.route('/api/graph', methods=['GET'])
 def get_route_instructions():
@@ -134,13 +134,13 @@ def get_route_instructions():
         return jsonify({"error": str(e)}), 400
 
 
-@app.route('/calculated_path', methods=['GET'])
-def get_calculated_path():
-    global calculated_path
-    if calculated_path:
-        return jsonify(calculated_path), 200
-    else:
-        return jsonify({"message": "No path calculated yet"}), 404
+# @app.route('/calculated_path', methods=['GET'])
+# def get_calculated_path():
+#     global calculated_path
+#     if calculated_path:
+#         return jsonify(calculated_path), 200
+#     else:
+#         return jsonify({"message": "No path calculated yet"}), 404
 
 app.add_url_rule('/health', view_func=health_check)
 
@@ -153,23 +153,20 @@ app.config['MAPS_FOLDER'] = MAPS_FOLDER
 @app.route('/api/maps/save', methods=['POST'])
 def save_map():
     try:
-        map_data = request.json.get('mapData')
-        map_data = json.loads(map_data)
+        map_data = request.json
 
-        # Convert node IDs to strings
-        for node in map_data:
-            node['id'] = str(node['id'])
-            for edge in node['edges']:
-                edge['vertex'] = str(edge['vertex'])
+        print(map_data)
 
         map_name = f'{uuid.uuid4()}.json'
-        file_path = os.path.join(app.config['MAPS_FOLDER'], map_name)
+        print("1")
+        file_path = os.path.join(app.config['MAPS_FOLDER'], "map_" + map_name)
+        print("2")
         
         # Save the map data with proper formatting
         with open(file_path, 'w') as file:
             file.write(json.dumps(map_data, indent=2))
         
-        return jsonify({"message": "Map saved successfully", "id": map_name.split('_')[1].split('.')[0]}), 200
+        return jsonify({"message": "Map saved successfully"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400    
 
