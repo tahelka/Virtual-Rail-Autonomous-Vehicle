@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
-  Typography,
   FormControl,
   InputLabel,
   Select,
@@ -14,6 +13,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useForm, Controller } from "react-hook-form";
+import CustomSnackbar from "../../Components/CustomSnackbar/CustomSnackbar";
 
 const fetchMaps = async () => {
   const { data } = await axios.get("http://localhost:5000/api/maps");
@@ -252,7 +252,7 @@ const ControlPanel = () => {
         </Button>
       </Box>
 
-      <Snackbar
+      {/* <Snackbar
         open={snackbarOpen}
         autoHideDuration={5000}
         onClose={handleClose}
@@ -269,7 +269,14 @@ const ControlPanel = () => {
         >
           {snackbarMessage}
         </Alert>
-      </Snackbar>
+      </Snackbar> */}
+
+      <CustomSnackbar
+        open={snackbarOpen}
+        onClose={handleClose}
+        message={snackbarMessage}
+        severity={snackbarSeverity}
+      />
     </Box>
   );
 };

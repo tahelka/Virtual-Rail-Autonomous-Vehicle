@@ -3,7 +3,7 @@ import { Grid } from "@mui/material";
 
 function App() {
   return (
-    <Grid container>
+    <Grid container sx={{ fontFamily: "Arial" }}>
       <NavBar />
     </Grid>
   );
