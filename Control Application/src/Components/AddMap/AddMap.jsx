@@ -13,7 +13,7 @@ import {
 import CustomSnackbar from "../../Components/CustomSnackbar/CustomSnackbar";
 import axios from "axios";
 import { useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form"; // Import useForm from react-hook-form
+import { useForm } from "react-hook-form";
 
 const AddMap = () => {
   const queryClient = useQueryClient();
@@ -76,12 +76,10 @@ const AddMap = () => {
     setSnackbarMessage("Edge added successfully");
     setSnackbarOpen(true);
 
-    // Reset form fields
     resetForm();
   };
 
   const resetForm = () => {
-    // Reset form fields using react-hook-form reset method
     reset({
       vertexId: "",
       connectedVertexId: "",
@@ -99,7 +97,6 @@ const AddMap = () => {
         return;
       }
 
-      // Send vertices as POST request body using Axios
       const response = await axios.post(
         "http://localhost:5000/api/maps/save",
         vertices
