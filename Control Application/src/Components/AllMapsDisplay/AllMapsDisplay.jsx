@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useState } from "react";
 import axios from "axios";
 import {
   Button,
@@ -10,7 +10,6 @@ import {
   List,
   ListItem,
   ListItemText,
-  Divider,
 } from "@mui/material";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import CustomSnackbar from "../CustomSnackbar/CustomSnackbar";
