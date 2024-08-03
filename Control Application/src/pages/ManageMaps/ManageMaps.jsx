@@ -8,13 +8,19 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Divider,
+  Tooltip,
 } from "@mui/material";
+import CustomSnackbar from "../../Components/CustomSnackbar/CustomSnackbar";
 
 const ManageMaps = () => {
   const [vertices, setVertices] = useState([]);
   const [vertexId, setVertexId] = useState("");
   const [connectedVertexId, setConnectedVertexId] = useState("");
   const [direction, setDirection] = useState("");
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success");
 
   const handleVertexIdChange = (event) => {
     setVertexId(event.target.value);
@@ -28,15 +34,21 @@ const ManageMaps = () => {
     setDirection(event.target.value);
   };
 
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
+
   const handleAddEdge = () => {
     if (
       vertexId.trim() === "" ||
       connectedVertexId.trim() === "" ||
       direction === ""
     ) {
-      alert(
+      setSnackbarSeverity("error");
+      setSnackbarMessage(
         "Please fill all fields (Vertex ID, Connected Vertex ID, Direction)"
       );
+      setSnackbarOpen(true);
       return;
     }
 
@@ -46,7 +58,9 @@ const ManageMaps = () => {
           (edge) => edge.vertex === connectedVertexId
         );
         if (existingEdgeIndex !== -1) {
-          alert("An edge with this vertex already exists.");
+          setSnackbarSeverity("error");
+          setSnackbarMessage("An edge with this vertex already exists.");
+          setSnackbarOpen(true);
           return vertex;
         }
 
@@ -85,6 +99,15 @@ const ManageMaps = () => {
 
   const handleSaveMap = () => {
     console.log(vertices);
+
+    setSnackbarSeverity("success");
+    setSnackbarMessage("Map created successfully");
+    setSnackbarOpen(true);
+
+    // reset the state
+    setVertices([]);
+    setVertexId("");
+    setConnectedVertexId("");
   };
 
   return (
@@ -167,6 +190,13 @@ const ManageMaps = () => {
           </ul>
         </div>
       )}
+
+      <CustomSnackbar
+        open={snackbarOpen}
+        onClose={handleCloseSnackbar}
+        message={snackbarMessage}
+        severity={snackbarSeverity}
+      />
     </div>
   );
 };
