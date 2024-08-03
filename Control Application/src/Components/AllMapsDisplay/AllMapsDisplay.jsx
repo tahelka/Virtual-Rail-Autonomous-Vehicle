@@ -12,9 +12,20 @@ import {
   ListItemText,
   Divider,
 } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import CustomSnackbar from "../CustomSnackbar/CustomSnackbar";
 
 const AllMapsDisplay = () => {
+  const queryClient = useQueryClient();
+
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success");
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
+
   const fetchMaps = async () => {
     const { data } = await axios.get("http://localhost:5000/api/maps");
     return data;
@@ -34,7 +45,12 @@ const AllMapsDisplay = () => {
       .delete(`http://localhost:5000/api/maps/delete/${mapId}`)
       .then((response) => {
         console.log(`Map with ID ${mapId} deleted successfully.`);
-        // Optionally, you can refetch the data after deletion
+        queryClient.invalidateQueries("maps");
+
+        // Show snackbar message
+        setSnackbarSeverity("success");
+        setSnackbarMessage("Map deleted successfully");
+        setSnackbarOpen(true);
       })
       .catch((error) => {
         console.error(`Error deleting map with ID ${mapId}:`, error);
@@ -100,6 +116,12 @@ const AllMapsDisplay = () => {
           </Card>
         </Grid>
       ))}
+      <CustomSnackbar
+        open={snackbarOpen}
+        onClose={handleCloseSnackbar}
+        message={snackbarMessage}
+        severity={snackbarSeverity}
+      />
     </Grid>
   );
 };
