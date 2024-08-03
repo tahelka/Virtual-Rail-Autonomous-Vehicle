@@ -8,53 +8,29 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Divider,
-  Tooltip,
+  FormHelperText,
 } from "@mui/material";
 import CustomSnackbar from "../../Components/CustomSnackbar/CustomSnackbar";
 import axios from "axios";
 import { useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form"; // Import useForm from react-hook-form
 
 const AddMap = () => {
   const queryClient = useQueryClient();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm(); // Initialize useForm
 
   const [vertices, setVertices] = useState([]);
-  const [vertexId, setVertexId] = useState("");
-  const [connectedVertexId, setConnectedVertexId] = useState("");
-  const [direction, setDirection] = useState("");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState("success");
 
-  const handleVertexIdChange = (event) => {
-    setVertexId(event.target.value);
-  };
-
-  const handleConnectedVertexIdChange = (event) => {
-    setConnectedVertexId(event.target.value);
-  };
-
-  const handleDirectionChange = (event) => {
-    setDirection(event.target.value);
-  };
-
-  const handleCloseSnackbar = () => {
-    setSnackbarOpen(false);
-  };
-
-  const handleAddEdge = () => {
-    if (
-      vertexId.trim() === "" ||
-      connectedVertexId.trim() === "" ||
-      direction === ""
-    ) {
-      setSnackbarSeverity("error");
-      setSnackbarMessage(
-        "Please fill all fields (Vertex ID, Connected Vertex ID, Direction)"
-      );
-      setSnackbarOpen(true);
-      return;
-    }
+  const onSubmit = (data) => {
+    const { vertexId, connectedVertexId, direction } = data;
 
     const updatedVertices = vertices.map((vertex) => {
       if (vertex.id === vertexId) {
@@ -96,14 +72,25 @@ const AddMap = () => {
       setVertices(updatedVertices);
     }
 
-    setVertexId("");
-    setConnectedVertexId("");
-    setDirection("");
+    setSnackbarSeverity("success");
+    setSnackbarMessage("Edge added successfully");
+    setSnackbarOpen(true);
+
+    // Reset form fields
+    resetForm();
+  };
+
+  const resetForm = () => {
+    // Reset form fields using react-hook-form reset method
+    reset({
+      vertexId: "",
+      connectedVertexId: "",
+      direction: "",
+    });
   };
 
   const handleSaveMap = async () => {
     try {
-      // Log vertices to verify
       console.log(vertices);
 
       // Make sure vertices is not empty
@@ -133,11 +120,10 @@ const AddMap = () => {
 
       // Reset the state
       setVertices([]);
-      setVertexId("");
-      setConnectedVertexId("");
+      resetForm();
     } catch (error) {
       console.error("Error saving map:", error);
-      // Set snackbar error message
+
       setSnackbarSeverity("error");
       setSnackbarMessage("Failed to save map");
       setSnackbarOpen(true);
@@ -146,55 +132,74 @@ const AddMap = () => {
 
   return (
     <div>
-      <Typography variant="h5" gutterBottom>
+      <Typography variant="h5" gutterBottom sx={{ marginBottom: "20px" }}>
         Add new map
       </Typography>
 
       {/* Form for adding edges */}
-      <Grid container spacing={2} alignItems="center">
-        <Grid item>
-          <TextField
-            label="Vertex ID"
-            variant="outlined"
-            size="small"
-            value={vertexId}
-            onChange={handleVertexIdChange}
-          />
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item sx={{ height: "100px" }}>
+            <TextField
+              label="Vertex ID"
+              variant="outlined"
+              size="small"
+              {...register("vertexId", { required: "Vertex ID is required" })}
+              error={!!errors.vertexId}
+            />
+            {errors.vertexId && (
+              <FormHelperText error>{errors.vertexId.message}</FormHelperText>
+            )}
+          </Grid>
+          <Grid item sx={{ height: "100px" }}>
+            <TextField
+              label="Connected Vertex ID"
+              variant="outlined"
+              size="small"
+              {...register("connectedVertexId", {
+                required: "Connected Vertex ID is required",
+              })}
+              error={!!errors.connectedVertexId}
+            />
+            {errors.connectedVertexId && (
+              <FormHelperText error>
+                {errors.connectedVertexId.message}
+              </FormHelperText>
+            )}
+          </Grid>
+          <Grid item sx={{ height: "100px" }}>
+            <FormControl variant="outlined" size="small" fullWidth>
+              <InputLabel>Select Direction</InputLabel>
+              <Select
+                {...register("direction", {
+                  required: "Direction is required",
+                })}
+                label="Select Direction"
+                sx={{ minWidth: "160px" }}
+                error={!!errors.direction}
+              >
+                <MenuItem value="north">North</MenuItem>
+                <MenuItem value="south">South</MenuItem>
+                <MenuItem value="east">East</MenuItem>
+                <MenuItem value="west">West</MenuItem>
+              </Select>
+              {errors.direction && (
+                <FormHelperText error>
+                  {errors.direction.message}
+                </FormHelperText>
+              )}
+            </FormControl>
+          </Grid>
+          <Grid item sx={{ height: "100px" }}>
+            <Button type="submit" variant="contained" color="primary">
+              Add Edge
+            </Button>
+          </Grid>
         </Grid>
-        <Grid item>
-          <TextField
-            label="Connected Vertex ID"
-            variant="outlined"
-            size="small"
-            value={connectedVertexId}
-            onChange={handleConnectedVertexIdChange}
-          />
-        </Grid>
-        <Grid item>
-          <FormControl variant="outlined" size="small" fullWidth>
-            <InputLabel>Select Direction</InputLabel>
-            <Select
-              value={direction}
-              onChange={handleDirectionChange}
-              label="Select Direction"
-              sx={{ minWidth: "160px" }}
-            >
-              <MenuItem value="north">North</MenuItem>
-              <MenuItem value="south">South</MenuItem>
-              <MenuItem value="east">East</MenuItem>
-              <MenuItem value="west">West</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-        <Grid item>
-          <Button variant="contained" color="primary" onClick={handleAddEdge}>
-            Add Edge
-          </Button>
-        </Grid>
-      </Grid>
+      </form>
 
       {/* Save Button */}
-      <Grid container spacing={2} style={{ marginTop: "20px" }}>
+      <Grid container spacing={2}>
         <Grid item>
           <Button variant="contained" color="primary" onClick={handleSaveMap}>
             Save Map
@@ -227,7 +232,7 @@ const AddMap = () => {
 
       <CustomSnackbar
         open={snackbarOpen}
-        onClose={handleCloseSnackbar}
+        onClose={() => setSnackbarOpen(false)}
         message={snackbarMessage}
         severity={snackbarSeverity}
       />

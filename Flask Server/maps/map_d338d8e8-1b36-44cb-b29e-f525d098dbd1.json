@@ -1,0 +1,11 @@
+[
+  {
+    "id": "3",
+    "edges": [
+      {
+        "vertex": "4",
+        "direction": "north"
+      }
+    ]
+  }
+]

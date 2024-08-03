@@ -106,7 +106,7 @@ const AllMapsDisplay = () => {
             <CardActions>
               <Button
                 variant="contained"
-                color="error" // Adjust color as per your theme
+                color="error"
                 onClick={() => handleDelete(map.id)}
               >
                 Delete
