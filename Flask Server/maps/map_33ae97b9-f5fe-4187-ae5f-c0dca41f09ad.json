@@ -3,12 +3,8 @@
     "id": "1",
     "edges": [
       {
-        "vertex": "3",
-        "direction": "east"
-      },
-      {
         "vertex": "2",
-        "direction": "south"
+        "direction": "north"
       }
     ]
   },
@@ -16,8 +12,12 @@
     "id": "2",
     "edges": [
       {
-        "vertex": "3",
+        "vertex": "1",
         "direction": "south"
+      },
+      {
+        "vertex": "3",
+        "direction": "east"
       }
     ]
   },
@@ -26,7 +26,7 @@
     "edges": [
       {
         "vertex": "2",
-        "direction": "north"
+        "direction": "west"
       }
     ]
   }

@@ -73,12 +73,15 @@ const AllMapsDisplay = () => {
           All available maps
         </Typography>
       </Grid>
-      {maps.map((map) => (
+      {maps.map((map, index) => (
         <Grid item key={map.id} xs={12}>
           <Card>
             <CardContent>
               <Typography variant="h5" component="div">
                 Map ID: {map.id}
+              </Typography>
+              <Typography variant="h6" component="div">
+                Map Name: Map {index + 1}
               </Typography>
               <Typography color="text.secondary" gutterBottom>
                 Creation Time:{" "}

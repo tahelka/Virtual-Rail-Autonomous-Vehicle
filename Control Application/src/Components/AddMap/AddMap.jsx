@@ -202,6 +202,12 @@ const AddMap = () => {
             Save Map
           </Button>
         </Grid>
+
+        <Grid item>
+          <Button variant="contained" color="primary" onClick={handleSaveMap}>
+            Reset Map
+          </Button>
+        </Grid>
       </Grid>
 
       {/* Display current vertices and edges */}
