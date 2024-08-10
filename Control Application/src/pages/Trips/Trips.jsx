@@ -13,7 +13,7 @@ import {
 const Trips = () => {
   const [trips, setTrips] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [tripsPerPage] = useState(6);
+  const [tripsPerPage] = useState(4);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -50,7 +50,7 @@ const Trips = () => {
     <>
       <Grid container spacing={2} style={{ padding: 16 }}>
         {currentTrips.map((trip) => (
-          <Grid item xs={12} sm={6} md={4} key={trip._id}>
+          <Grid item xs={12} sm={6} md={6} key={trip._id}>
             <Card variant="outlined">
               <CardContent>
                 <Typography variant="h6" component="div">

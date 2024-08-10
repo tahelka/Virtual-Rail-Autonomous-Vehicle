@@ -33,6 +33,26 @@ def get_trips():
     
     return jsonify(trips)
 
+@app.route('/api/trips/<trip_id>', methods=['GET'])
+def get_trip_by_id(trip_id):
+    # Check if trip_id is a valid ObjectId
+    if not ObjectId.is_valid(trip_id):
+        return jsonify({"error": "Invalid trip ID format"}), 400
+    
+    # Convert trip_id to ObjectId
+    trip_id_obj = ObjectId(trip_id)
+    
+    # Retrieve the trip document from the collection
+    trip = trips_collection.find_one({'_id': trip_id_obj})
+    
+    if trip is None:
+        return jsonify({"error": "Trip not found"}), 404
+    
+    # Convert MongoDB document to JSON format
+    trip['_id'] = str(trip['_id'])  # Convert ObjectId to string for JSON serialization
+    
+    return jsonify(trip)
+
 @app.route('/api/orders/delete/<order_id>', methods=['DELETE'])
 def delete_order(order_id):
     print(f"Deleting order with ID: {order_id}")
@@ -154,13 +174,14 @@ def get_route_instructions():
                 "path": path_obj['path']['path'],
                 "directions": path_obj['path']['directions'],
                 "orientation": orientation,
-                "mapid": mapid
+                "mapid": mapid,
+                "orderid": orderid,
             }
             
             # Create a new trip document
             trip_id = str(uuid.uuid4())  # Generate a unique ID for the trip
             trip_document = {
-                "_id": trip_id,
+                # "_id": trip_id,
                 "map_id": mapid,
                 "order_id": orderid,
                 "starting_point": start,
