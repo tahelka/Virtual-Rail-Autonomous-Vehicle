@@ -190,11 +190,10 @@ def save_map():
 @app.route('/api/maps/delete/<map_id>', methods=['DELETE'])
 def delete_map(map_id):
     try:
-        file_name = f'map_{map_id}.json'
-        file_path = os.path.join(app.config['MAPS_FOLDER'], file_name)
+        # Delete the map document from MongoDB
+        result = maps_collection.delete_one({'_id': map_id})
         
-        if os.path.exists(file_path):
-            os.remove(file_path)
+        if result.deleted_count > 0:
             return jsonify({"message": "Map deleted successfully"}), 200
         else:
             return jsonify({"message": "Map not found"}), 404
