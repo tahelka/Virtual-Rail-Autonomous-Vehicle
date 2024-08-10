@@ -7,6 +7,7 @@ import {
   Button,
   FormHelperText,
   TextField,
+  Tooltip,
 } from "@mui/material";
 import { Controller } from "react-hook-form";
 
@@ -146,14 +147,19 @@ const OrderForm = ({
         />
       </FormControl>
 
-      <Button
-        variant="contained"
-        color="primary"
-        type="submit"
-        style={{ alignSelf: "flex-start", minWidth: "300px" }}
+      <Tooltip
+        arrow
+        title="Clicking this button will create a new order in the system. Afterward, you can select the start icon in the orders table to be redirected to the control panel with pre-filled input values."
       >
-        Add new order
-      </Button>
+        <Button
+          variant="contained"
+          color="primary"
+          type="submit"
+          style={{ alignSelf: "flex-start", minWidth: "300px" }}
+        >
+          Add new order
+        </Button>
+      </Tooltip>
     </form>
   );
 };

@@ -259,7 +259,10 @@ const ControlPanel = () => {
           />
         </FormControl>
 
-        <Tooltip title="A command will be sent to the server to calculate the optimal path, and the resulting path will then be transmitted to the vehicle control module">
+        <Tooltip
+          arrow
+          title="A command will be sent to the server to calculate the optimal path, and the resulting path will then be transmitted to the vehicle control module"
+        >
           <Button
             variant="contained"
             color="primary"

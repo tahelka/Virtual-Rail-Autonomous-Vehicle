@@ -5,8 +5,7 @@ import DirectionsCarSharpIcon from "@mui/icons-material/DirectionsCarSharp"; // 
 const Logo = () => {
   return (
     <Box display="flex" alignItems="center">
-      <DirectionsCarSharpIcon sx={{ mr: 1, mb: 0.5 }} />{" "}
-      {/* Adjust the margin as needed */}
+      <DirectionsCarSharpIcon sx={{ mr: 1, mb: 0.5 }} />
       <Typography variant="h6">Talide</Typography>
     </Box>
   );

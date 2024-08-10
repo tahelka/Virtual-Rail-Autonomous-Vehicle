@@ -7,108 +7,55 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import MapIcon from "@mui/icons-material/Map";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import SettingsIcon from "@mui/icons-material/Settings";
-import ReceiptLongIcon from "@mui/icons-material/ReceiptLong"; // Import the Orders icon
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Tooltip } from "@mui/material";
+
+const menuItems = [
+  {
+    text: "Control Panel",
+    icon: <DashboardIcon />,
+    path: "/control-panel",
+    tooltip: "This page allows you to initiate a new vehicle delivery.",
+  },
+  {
+    text: "Orders",
+    icon: <ReceiptLongIcon />,
+    path: "/orders",
+    tooltip:
+      "This page lets you create new orders, view all existing orders, and initiate new deliveries.",
+  },
+  { text: "Manage Maps", icon: <MapIcon />, path: "/manage-maps" },
+  { text: "Statistics", icon: <BarChartIcon />, path: "/statistics" },
+  { text: "Settings", icon: <SettingsIcon />, path: "/settings" },
+];
 
 function CustomList() {
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname;
 
-  return (
-    <List>
+  const renderListItem = ({ text, icon, path, tooltip }) => (
+    <Tooltip key={path} arrow placement="right" title={tooltip || ""}>
       <ListItem disablePadding>
         <ListItemButton
-          onClick={() => navigate("/control-panel")}
+          onClick={() => navigate(path)}
           sx={{
-            backgroundColor:
-              currentPath === "/control-panel" ? "lightgray" : "white",
+            backgroundColor: currentPath === path ? "lightgray" : "white",
             "&:hover": {
               backgroundColor:
-                currentPath === "/control-panel" ? "lightgray" : "whitesmoke",
+                currentPath === path ? "lightgray" : "whitesmoke",
             },
           }}
         >
-          <ListItemIcon>
-            <DashboardIcon />
-          </ListItemIcon>
-          <ListItemText primary="Control Panel" />
+          <ListItemIcon>{icon}</ListItemIcon>
+          <ListItemText primary={text} />
         </ListItemButton>
       </ListItem>
-      <ListItem disablePadding>
-        <ListItemButton
-          onClick={() => navigate("/orders")}
-          sx={{
-            backgroundColor: currentPath === "/orders" ? "lightgray" : "white",
-            "&:hover": {
-              backgroundColor:
-                currentPath === "/orders" ? "lightgray" : "whitesmoke",
-            },
-          }}
-        >
-          <ListItemIcon>
-            <ReceiptLongIcon />
-          </ListItemIcon>
-          <ListItemText primary="Orders" />
-        </ListItemButton>
-      </ListItem>
-      <ListItem disablePadding>
-        <ListItemButton
-          onClick={() => navigate("/manage-maps")}
-          sx={{
-            backgroundColor:
-              currentPath === "/manage-maps" ? "lightgray" : "white",
-            "&:hover": {
-              backgroundColor:
-                currentPath === "/manage-maps" ? "lightgray" : "whitesmoke",
-            },
-          }}
-        >
-          <ListItemIcon>
-            <MapIcon />
-          </ListItemIcon>
-          <ListItemText primary="Manage Maps" />
-        </ListItemButton>
-      </ListItem>
-      <ListItem disablePadding>
-        <ListItemButton
-          onClick={() => navigate("/statistics")}
-          sx={{
-            backgroundColor:
-              currentPath === "/statistics" ? "lightgray" : "white",
-            "&:hover": {
-              backgroundColor:
-                currentPath === "/statistics" ? "lightgray" : "whitesmoke",
-            },
-          }}
-        >
-          <ListItemIcon>
-            <BarChartIcon />
-          </ListItemIcon>
-          <ListItemText primary="Statistics" />
-        </ListItemButton>
-      </ListItem>
-
-      <ListItem disablePadding>
-        <ListItemButton
-          onClick={() => navigate("/settings")}
-          sx={{
-            backgroundColor:
-              currentPath === "/settings" ? "lightgray" : "white",
-            "&:hover": {
-              backgroundColor:
-                currentPath === "/settings" ? "lightgray" : "whitesmoke",
-            },
-          }}
-        >
-          <ListItemIcon>
-            <SettingsIcon />
-          </ListItemIcon>
-          <ListItemText primary="Settings" />
-        </ListItemButton>
-      </ListItem>
-    </List>
+    </Tooltip>
   );
+
+  return <List>{menuItems.map(renderListItem)}</List>;
 }
 
 export default CustomList;

@@ -155,12 +155,6 @@ def get_route_instructions():
 
 app.add_url_rule('/health', view_func=health_check)
 
-# Define the folder for storing map files
-MAPS_FOLDER = 'maps'
-if not os.path.exists(MAPS_FOLDER):
-    os.makedirs(MAPS_FOLDER)
-app.config['MAPS_FOLDER'] = MAPS_FOLDER
-
 @app.route('/api/maps/save', methods=['POST'])
 def save_map():
     try:
@@ -238,9 +232,6 @@ def list_maps():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-@app.route('/download/<path:filename>', methods=['GET'])
-def download_map(filename):
-    return send_from_directory(app.config['MAPS_FOLDER'], filename, as_attachment=True)
 
 if __name__ == '__main__':
     from config import DEFAULT_PORT
