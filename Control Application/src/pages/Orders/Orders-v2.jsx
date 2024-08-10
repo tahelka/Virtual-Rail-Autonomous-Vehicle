@@ -1,6 +1,13 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import {
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Button,
   Box,
+  FormHelperText,
+  TextField,
   Table,
   TableBody,
   TableCell,
@@ -13,12 +20,11 @@ import {
 } from "@mui/material";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import CustomSnackbar from "../../Components/CustomSnackbar/CustomSnackbar";
 import { useNavigate } from "react-router-dom";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
-import OrderForm from "../../Components/OrderForm/OrderForm";
 
 // Fetch maps
 const fetchMaps = async () => {
@@ -77,6 +83,32 @@ const Orders = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState("success");
 
+  useEffect(() => {
+    if (maps && watch("selectedMap")) {
+      setValue("startingPoint", "");
+      setValue("destinationPoint", "");
+    }
+  }, [watch("selectedMap"), maps, setValue]);
+
+  if (isLoadingMaps || isLoadingOrders) return <span>Loading...</span>;
+  if (errorMaps) return <span>Error fetching maps.</span>;
+  if (errorOrders) return <span>Error fetching orders.</span>;
+
+  // Log the orders to check its format
+  console.log("Fetched Orders:", orders);
+
+  const sortedOrders = orders
+    .slice()
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+  const sortedMaps = [...maps].sort(
+    (a, b) => a.creation_time - b.creation_time
+  );
+  const mapOptions = sortedMaps.map((map, index) => ({
+    id: map.id,
+    name: `Map ${index + 1}`,
+  }));
+
   const onSubmit = async (data) => {
     const { selectedMap, startingPoint, destinationPoint, contents } = data;
 
@@ -119,32 +151,141 @@ const Orders = () => {
     setSnackbarOpen(false);
   };
 
-  if (isLoadingMaps || isLoadingOrders) return <span>Loading...</span>;
-  if (errorMaps) return <span>Error fetching maps.</span>;
-  if (errorOrders) return <span>Error fetching orders.</span>;
-
-  // Log the orders to check its format
-  console.log("Fetched Orders:", orders);
-
-  const sortedOrders = orders
-    .slice()
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-  const sortedMaps = [...maps].sort(
-    (a, b) => a.creation_time - b.creation_time
-  );
+  const selectedMap = watch("selectedMap");
+  const nodes = sortedMaps.find((map) => map.id === selectedMap)?.data || [];
 
   return (
     <Box sx={{ padding: 2 }}>
-      <OrderForm
-        control={control}
-        handleSubmit={handleSubmit}
-        errors={errors}
-        setValue={setValue}
-        onSubmit={onSubmit}
-        maps={sortedMaps}
-        watch={watch}
-      />
+      <Box
+        component="form"
+        sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+        onSubmit={handleSubmit(onSubmit)}
+      >
+        <FormControl fullWidth error={!!errors.selectedMap}>
+          <InputLabel id="choose-map-label">Choose map</InputLabel>
+          <Controller
+            name="selectedMap"
+            control={control}
+            rules={{ required: "Map selection is required" }}
+            render={({ field }) => (
+              <>
+                <Select
+                  labelId="choose-map-label"
+                  id="choose-map"
+                  {...field}
+                  label="Choose map"
+                  onChange={(e) => {
+                    field.onChange(e);
+                    setValue("startingPoint", "");
+                    setValue("destinationPoint", "");
+                  }}
+                >
+                  {mapOptions.map((map) => (
+                    <MenuItem key={map.id} value={map.id}>
+                      {map.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {errors.selectedMap && (
+                  <FormHelperText>{errors.selectedMap.message}</FormHelperText>
+                )}
+              </>
+            )}
+          />
+        </FormControl>
+
+        <FormControl fullWidth error={!!errors.startingPoint}>
+          <InputLabel id="starting-point-label">Starting point</InputLabel>
+          <Controller
+            name="startingPoint"
+            control={control}
+            rules={{ required: "Starting point is required" }}
+            render={({ field }) => (
+              <>
+                <Select
+                  labelId="starting-point-label"
+                  id="starting-point"
+                  {...field}
+                  label="Starting point"
+                >
+                  {nodes.map((node) => (
+                    <MenuItem key={node.id} value={node.id}>
+                      Point {node.id}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {errors.startingPoint && (
+                  <FormHelperText>
+                    {errors.startingPoint.message}
+                  </FormHelperText>
+                )}
+              </>
+            )}
+          />
+        </FormControl>
+
+        <FormControl fullWidth error={!!errors.destinationPoint}>
+          <InputLabel id="destination-point-label">
+            Destination point
+          </InputLabel>
+          <Controller
+            name="destinationPoint"
+            control={control}
+            rules={{ required: "Destination point is required" }}
+            render={({ field }) => (
+              <>
+                <Select
+                  labelId="destination-point-label"
+                  id="destination-point"
+                  {...field}
+                  label="Destination point"
+                >
+                  {nodes.map((node) => (
+                    <MenuItem key={node.id} value={node.id}>
+                      Destination {node.id}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {errors.destinationPoint && (
+                  <FormHelperText>
+                    {errors.destinationPoint.message}
+                  </FormHelperText>
+                )}
+              </>
+            )}
+          />
+        </FormControl>
+
+        <FormControl fullWidth error={!!errors.contents}>
+          <Controller
+            name="contents"
+            control={control}
+            rules={{ required: "Contents are required" }}
+            render={({ field }) => (
+              <>
+                <TextField
+                  {...field}
+                  label="Contents"
+                  variant="outlined"
+                  fullWidth
+                />
+                {errors.contents && (
+                  <FormHelperText>{errors.contents.message}</FormHelperText>
+                )}
+              </>
+            )}
+          />
+        </FormControl>
+
+        <Button
+          variant="contained"
+          color="primary"
+          type="submit"
+          sx={{ alignSelf: "flex-start", minWidth: 300 }}
+        >
+          Add new order
+        </Button>
+      </Box>
 
       <CustomSnackbar
         open={snackbarOpen}
