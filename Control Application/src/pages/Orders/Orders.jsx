@@ -309,7 +309,11 @@ const Orders = () => {
                       <Button
                         variant="contained"
                         color="primary"
-                        onClick={() => navigate(`/delivery/${order._id}`)}
+                        onClick={() =>
+                          navigate(
+                            `/control-panel?selectedMap=${order.map}&startingPoint=${order.origin}&destinationPoint=${order.destination}`
+                          )
+                        }
                       >
                         Start Delivery
                       </Button>
