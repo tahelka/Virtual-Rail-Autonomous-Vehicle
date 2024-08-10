@@ -1,0 +1,20 @@
+[
+  {
+    "id": "1",
+    "edges": [
+      {
+        "vertex": "2",
+        "direction": "east"
+      }
+    ]
+  },
+  {
+    "id": "2",
+    "edges": [
+      {
+        "vertex": "1",
+        "direction": "west"
+      }
+    ]
+  }
+]

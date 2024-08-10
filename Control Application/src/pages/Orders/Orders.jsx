@@ -1,24 +1,11 @@
 import React, { useState } from "react";
-import {
-  Box,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  Tooltip,
-} from "@mui/material";
+import { Box } from "@mui/material";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useForm } from "react-hook-form";
 import CustomSnackbar from "../../Components/CustomSnackbar/CustomSnackbar";
-import { useNavigate } from "react-router-dom";
-import DeleteIcon from "@mui/icons-material/Delete";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import OrderForm from "../../Components/OrderForm/OrderForm";
+import OrdersTable from "../../Components/OrdersTable/OrdersTable";
 
 // Fetch maps
 const fetchMaps = async () => {
@@ -33,7 +20,6 @@ const fetchOrders = async () => {
 };
 
 const Orders = () => {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   // Fetch maps
@@ -119,12 +105,25 @@ const Orders = () => {
     setSnackbarOpen(false);
   };
 
+  const handleDeleteOrder = async (orderId) => {
+    try {
+      await axios.delete(`http://localhost:5000/api/orders/delete/${orderId}`);
+      queryClient.invalidateQueries(["orders"]);
+
+      setSnackbarSeverity("success");
+      setSnackbarMessage("Order deleted successfully!");
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.log("Error deleting order:", error);
+      setSnackbarSeverity("error");
+      setSnackbarMessage("Error deleting order.");
+      setSnackbarOpen(true);
+    }
+  };
+
   if (isLoadingMaps || isLoadingOrders) return <span>Loading...</span>;
   if (errorMaps) return <span>Error fetching maps.</span>;
   if (errorOrders) return <span>Error fetching orders.</span>;
-
-  // Log the orders to check its format
-  console.log("Fetched Orders:", orders);
 
   const sortedOrders = orders
     .slice()
@@ -153,62 +152,7 @@ const Orders = () => {
         severity={snackbarSeverity}
       />
 
-      <Box sx={{ marginTop: 4 }}>
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Order ID</TableCell>
-                <TableCell>Contents</TableCell>
-                <TableCell>Map ID</TableCell>
-                <TableCell>Starting Point</TableCell>
-                <TableCell>Destination Point</TableCell>
-                <TableCell>Action</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {Array.isArray(sortedOrders) && sortedOrders.length > 0 ? (
-                sortedOrders.map((order) => (
-                  <TableRow key={order._id}>
-                    <TableCell>{order._id}</TableCell>
-                    <TableCell>{order.contents}</TableCell>
-                    <TableCell>{order.map}</TableCell>
-                    <TableCell>{order.origin}</TableCell>
-                    <TableCell>{order.destination}</TableCell>
-                    <TableCell>
-                      <Tooltip title="Redirects to control-panel page with pre-selected parameters">
-                        <IconButton
-                          color="primary"
-                          onClick={() =>
-                            navigate(
-                              `/control-panel?selectedMap=${order.map}&startingPoint=${order.origin}&destinationPoint=${order.destination}`
-                            )
-                          }
-                        >
-                          <PlayArrowIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <IconButton
-                        color="secondary"
-                        onClick={() =>
-                          // Add logic to delete the order
-                          console.log("Delete Order:", order._id)
-                        }
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6}>No orders available</TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Box>
+      <OrdersTable orders={sortedOrders} onDeleteOrder={handleDeleteOrder} />
     </Box>
   );
 };

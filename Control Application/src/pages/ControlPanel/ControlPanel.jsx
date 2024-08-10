@@ -10,6 +10,7 @@ import {
   Snackbar,
   Alert,
   FormHelperText,
+  Tooltip,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -258,14 +259,16 @@ const ControlPanel = () => {
           />
         </FormControl>
 
-        <Button
-          variant="contained"
-          color="primary"
-          type="submit"
-          sx={{ alignSelf: "flex-start", minWidth: 300 }}
-        >
-          Start
-        </Button>
+        <Tooltip title="A command will be sent to the server to calculate the optimal path, and the resulting path will then be transmitted to the vehicle control module">
+          <Button
+            variant="contained"
+            color="primary"
+            type="submit"
+            sx={{ alignSelf: "flex-start", minWidth: 300 }}
+          >
+            Start
+          </Button>
+        </Tooltip>
       </Box>
 
       <CustomSnackbar

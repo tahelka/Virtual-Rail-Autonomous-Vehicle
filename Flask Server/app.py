@@ -9,6 +9,8 @@ import uuid
 import json
 from pymongo import MongoClient
 from datetime import datetime
+from bson import ObjectId
+
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -17,6 +19,24 @@ CORS(app)  # Enable CORS for all routes
 client = MongoClient("mongodb+srv://mongodb:Ha6j5kggIMvKE55S@cluster0.1kxk0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client['talide']  # Replace 'your_database_name' with the actual database name
 
+
+@app.route('/api/orders/delete/<order_id>', methods=['DELETE'])
+def delete_order(order_id):
+    print(f"Deleting order with ID: {order_id}")
+    try:
+        if not ObjectId.is_valid(order_id):
+            return jsonify({"error": "Invalid order ID format"}), 400
+
+        orders_collection = db['orders']
+        result = orders_collection.delete_one({"_id": ObjectId(order_id)})
+
+        if result.deleted_count > 0:
+            return jsonify({"message": "Order deleted successfully"}), 200
+        else:
+            return jsonify({"error": "Order not found"}), 404
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 @app.route('/api/orders/create', methods=['POST'])
 def create_order():
