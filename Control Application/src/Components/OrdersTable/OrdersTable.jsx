@@ -48,7 +48,7 @@ const OrdersTable = ({ orders, onDeleteOrder }) => {
                         color="primary"
                         onClick={() =>
                           navigate(
-                            `/control-panel?selectedMap=${order.map}&startingPoint=${order.origin}&destinationPoint=${order.destination}`
+                            `/control-panel?selectedMap=${order.map}&startingPoint=${order.origin}&destinationPoint=${order.destination}&orderID=${order._id}`
                           )
                         }
                       >

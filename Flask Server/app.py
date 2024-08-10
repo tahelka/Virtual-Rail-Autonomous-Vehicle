@@ -11,7 +11,6 @@ from pymongo import MongoClient
 from datetime import datetime
 from bson import ObjectId
 
-
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
@@ -19,7 +18,20 @@ CORS(app)  # Enable CORS for all routes
 client = MongoClient("mongodb+srv://mongodb:Ha6j5kggIMvKE55S@cluster0.1kxk0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client['talide']  
 maps_collection = db['maps']
+trips_collection = db['trips']
+orders_collection = db['orders']
 
+@app.route('/api/trips', methods=['GET'])
+def get_trips():
+    
+    # Retrieve all documents from the collection
+    trips = list(trips_collection.find())
+    
+    # Convert MongoDB documents to JSON format
+    for trip in trips:
+        trip['_id'] = str(trip['_id'])  # Convert ObjectId to string for JSON serialization
+    
+    return jsonify(trips)
 
 @app.route('/api/orders/delete/<order_id>', methods=['DELETE'])
 def delete_order(order_id):
@@ -28,7 +40,7 @@ def delete_order(order_id):
         if not ObjectId.is_valid(order_id):
             return jsonify({"error": "Invalid order ID format"}), 400
 
-        orders_collection = db['orders']
+        
         result = orders_collection.delete_one({"_id": ObjectId(order_id)})
 
         if result.deleted_count > 0:
@@ -101,6 +113,7 @@ def get_route_instructions():
         start = request.args.get('start')
         target = request.args.get('target')
         orientation = request.args.get('orientation')
+        orderid = request.args.get('orderid')
         
         # Validate query parameters
         if not mapid or not start or not target or not orientation:
@@ -143,8 +156,29 @@ def get_route_instructions():
                 "orientation": orientation,
                 "mapid": mapid
             }
+            
+            # Create a new trip document
+            trip_id = str(uuid.uuid4())  # Generate a unique ID for the trip
+            trip_document = {
+                "_id": trip_id,
+                "map_id": mapid,
+                "order_id": orderid,
+                "starting_point": start,
+                "destination_point": target,
+                "starting_orientation": orientation,
+                "created_at": datetime.utcnow(),
+                "directions": calculated_path["directions"],
+                "path": calculated_path["path"],
+                "arrived_at_destination": False,
+                "avg_offset": 0.0,
+            }
+            
+            # Insert the trip document into the trips collection
+            trips_collection.insert_one(trip_document)
+            
             return jsonify({
-                "shortest_path": calculated_path
+                "shortest_path": calculated_path,
+                "trip_id": trip_id  # Include the trip ID in the response
             }), 200
         else:
             return jsonify({"message": "No paths found"}), 404

@@ -30,6 +30,7 @@ const ControlPanel = () => {
   const paramStart = queryParams.get("startingPoint") || "";
   const paramDest = queryParams.get("destinationPoint") || "";
   const paramOrient = queryParams.get("orientation") || "";
+  const paramOrderID = queryParams.get("orderID") || "0000";
 
   const {
     data: maps,
@@ -102,7 +103,7 @@ const ControlPanel = () => {
       return;
     }
 
-    const url = `http://localhost:5000/api/graph?mapid=${selectedMap}&start=${startingPoint}&target=${destinationPoint}&orientation=${orientation}`;
+    const url = `http://localhost:5000/api/graph?mapid=${selectedMap}&start=${startingPoint}&target=${destinationPoint}&orientation=${orientation}&orderid=${paramOrderID}`;
 
     try {
       const response = await axios.get(url);

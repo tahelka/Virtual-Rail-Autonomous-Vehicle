@@ -10,6 +10,7 @@ import Settings from "./pages/Settings/Settings.jsx";
 import Orders from "./pages/Orders/Orders.jsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import Trips from "./pages/Trips/Trips.jsx";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
             <Route path="/statistics" element={<Statistics />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/orders" element={<Orders />} />
+            <Route path="/trips" element={<Trips />} />
           </Route>
         </Routes>
       </BrowserRouter>
