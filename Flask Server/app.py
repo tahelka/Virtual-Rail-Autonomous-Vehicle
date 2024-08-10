@@ -17,7 +17,8 @@ CORS(app)  # Enable CORS for all routes
 
 # MongoDB connection setup
 client = MongoClient("mongodb+srv://mongodb:Ha6j5kggIMvKE55S@cluster0.1kxk0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
-db = client['talide']  # Replace 'your_database_name' with the actual database name
+db = client['talide']  
+maps_collection = db['maps']
 
 
 @app.route('/api/orders/delete/<order_id>', methods=['DELETE'])
@@ -105,63 +106,48 @@ def get_route_instructions():
         if not mapid or not start or not target or not orientation:
             return jsonify({"error": "mapid, start, target, and orientation parameters are required"}), 400
         
-        # Determine the current working directory
-        current_directory = os.getcwd()
-        print(f"Current working directory: {current_directory}")
-
-        # Construct the absolute path to the "maps" folder
-        maps_folder = os.path.join(current_directory, 'maps')
+        # Fetch map data from MongoDB
+        map_document = maps_collection.find_one({'_id': mapid})
         
-        # Construct the full path to the JSON file
-        json_filename = f"map_{mapid}.json"
-        json_filepath = os.path.join(maps_folder, json_filename)
+        if not map_document:
+            return jsonify({"message": "Map not found"}), 404
         
-        # Print the path for debugging
-        print(f"Checking file at: {json_filepath}")
+        # Get the graph data from the MongoDB document
+        graph_data = map_document.get('map_data')
         
-        # Check if the file exists
-        if os.path.isfile(json_filepath):
-            print(f"File found: {json_filepath}")
-            # Read and parse the JSON file
-            with open(json_filepath, 'r') as file:
-                graph_data = json.load(file)
-            # Print the loaded data for debugging
-            print(f"Loaded data: {graph_data}")
-            
-            # Initialize the graph and populate it with the data
-            graph = Graph()
-            for node in graph_data:
-                graph.add_vertex(node['id'])
-            for node in graph_data:
-                for edge in node['edges']:
-                    graph.add_edge(node['id'], edge['vertex'], edge['direction'])
-            
-            # Validate start and target parameters
-            if not start or not target:
-                return jsonify({"error": "Start and target parameters are required"}), 400
-            
-            # Find all paths and shortest paths
-            all_paths = graph.find_all_paths(start, target)
-            shortest_paths = graph.find_shortest_paths(all_paths)
-            
-            # Return the shortest path
-            if shortest_paths:
-                path_obj = shortest_paths[0]
-                calculated_path = {
-                    "path": path_obj['path']['path'],
-                    "directions": path_obj['path']['directions'],
-                    "orientation": orientation,
-                    "mapid": mapid
-                }
-                return jsonify({
-                    "shortest_path": calculated_path
-                }), 200
-            else:
-                return jsonify({"message": "No paths found"}), 404
-
+        if not graph_data:
+            return jsonify({"message": "Graph data not found in the map document"}), 404
+        
+        # Initialize the graph and populate it with the data
+        graph = Graph()
+        for node in graph_data:
+            graph.add_vertex(node['id'])
+        for node in graph_data:
+            for edge in node['edges']:
+                graph.add_edge(node['id'], edge['vertex'], edge['direction'])
+        
+        # Validate start and target parameters
+        if not start or not target:
+            return jsonify({"error": "Start and target parameters are required"}), 400
+        
+        # Find all paths and shortest paths
+        all_paths = graph.find_all_paths(start, target)
+        shortest_paths = graph.find_shortest_paths(all_paths)
+        
+        # Return the shortest path
+        if shortest_paths:
+            path_obj = shortest_paths[0]
+            calculated_path = {
+                "path": path_obj['path']['path'],
+                "directions": path_obj['path']['directions'],
+                "orientation": orientation,
+                "mapid": mapid
+            }
+            return jsonify({
+                "shortest_path": calculated_path
+            }), 200
         else:
-            print(f"File not found: {json_filepath}")
-            return jsonify({"message": "File not found"}), 404
+            return jsonify({"message": "No paths found"}), 404
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
@@ -178,18 +164,28 @@ app.config['MAPS_FOLDER'] = MAPS_FOLDER
 @app.route('/api/maps/save', methods=['POST'])
 def save_map():
     try:
+        # Get the map data from the request
         map_data = request.json
-
-        map_name = f'{uuid.uuid4()}.json'
-        file_path = os.path.join(app.config['MAPS_FOLDER'], "map_" + map_name)
         
-        # Save the map data with proper formatting
-        with open(file_path, 'w') as file:
-            file.write(json.dumps(map_data, indent=2))
+        # Generate a unique identifier for the map
+        map_id = str(uuid.uuid4())
         
-        return jsonify({"message": "Map saved successfully"}), 200
+        # Get the current time
+        creation_time = datetime.utcnow()
+        
+        # Save the map data to the MongoDB collection
+        result = maps_collection.insert_one({
+            '_id': map_id,
+            'map_data': map_data,
+            'created_at': creation_time
+        })
+        
+        # Get the inserted ID from MongoDB
+        inserted_id = str(result.inserted_id)
+        
+        return jsonify({"message": "Map saved successfully", "map_id": inserted_id, "created_at": creation_time.isoformat()}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 400    
+        return jsonify({"error": str(e)}), 400 
 
 @app.route('/api/maps/delete/<map_id>', methods=['DELETE'])
 def delete_map(map_id):
@@ -208,16 +204,33 @@ def delete_map(map_id):
 @app.route('/api/maps', methods=['GET'])
 def list_maps():
     try:
-        map_files = os.listdir(app.config['MAPS_FOLDER'])
+        # Retrieve all maps from the MongoDB collection
+        cursor = maps_collection.find()
+        
+        # Convert MongoDB documents to a list of dictionaries
         maps = []
-        for file_name in map_files:
-            if file_name.endswith('.json'):
-                map_id = file_name.split('_')[1].split('.')[0]
-                file_path = os.path.join(app.config['MAPS_FOLDER'], file_name)
-                creation_time = os.path.getctime(file_path)  # Get the creation time
-                with open(file_path, 'r') as file:
-                    map_data = json.load(file)
-                    maps.append({"id": map_id, "data": map_data, "creation_time": creation_time})
+        for document in cursor:
+            # Extract relevant data
+            map_id = document.get('_id')
+            map_data = document.get('map_data')
+            creation_time = document.get('created_at')
+            
+            # Use a default value if creation_time is missing
+            if creation_time is None:
+                creation_time = datetime.utcnow()  # Default to current time
+            else:
+                # Ensure creation_time is a datetime object
+                if isinstance(creation_time, str):
+                    creation_time = datetime.fromisoformat(creation_time)
+            
+            # Format creation_time for response (ISO format string)
+            formatted_creation_time = creation_time.isoformat()
+            
+            maps.append({
+                "id": map_id,
+                "data": map_data,
+                "creation_time": formatted_creation_time
+            })
         
         # Sort maps by creation time
         maps.sort(key=lambda x: x['creation_time'])

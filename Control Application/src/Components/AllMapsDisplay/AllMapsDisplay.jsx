@@ -85,7 +85,16 @@ const AllMapsDisplay = () => {
               </Typography>
               <Typography color="text.secondary" gutterBottom>
                 Creation Time:{" "}
-                {new Date(map.creation_time * 1000).toLocaleString()}
+                {new Intl.DateTimeFormat("en-UK", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                  hour12: false, // Use 24-hour format
+                }).format(new Date("2024-08-10T12:17:43.578000"))}
               </Typography>
               <Typography variant="body2">
                 <strong>Data:</strong>
