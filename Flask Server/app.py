@@ -7,58 +7,70 @@ import threading
 import os
 import uuid
 import json
+from pymongo import MongoClient
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
-# Global variable to store the calculated path
-# calculated_path = None
+# MongoDB connection setup
+client = MongoClient("mongodb+srv://mongodb:Ha6j5kggIMvKE55S@cluster0.1kxk0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+db = client['talide']  # Replace 'your_database_name' with the actual database name
 
-# def execute_code():
-#     while(True):
-#         print("Executing code...")
-#         time.sleep(1)
 
-# @app.route('/graph', methods=['POST'])
-# def receive_graph():
-#     try:
-#         global calculated_path
-        
-#         graph_data = request.json
-#         graph = Graph()
+@app.route('/api/orders/create', methods=['POST'])
+def create_order():
+    try:
+        # Extract data from the request body
+        data = request.json
+        created_at = datetime.now()  # Current datetime
+        contents = data.get('contents')
+        map = data.get('map')
+        origin = data.get('origin')
+        destination = data.get('destination')
 
-#         for node in graph_data:
-#             graph.add_vertex(node['id'])
-#         for node in graph_data:
-#             for edge in node['edges']:
-#                 graph.add_edge(node['id'], edge['vertex'], edge['direction'])
+        # Validate required fields
+        if not contents or not map or not origin or not destination:
+            return jsonify({"error": "contents, map, origin, and destination are required"}), 400
 
-#         start = request.args.get('start')
-#         target = request.args.get('target')
+        # Create the order document
+        order = {
+            "created_at": created_at,
+            "contents": contents,
+            "map": map,
+            "origin": origin,
+            "destination": destination
+        }
 
-#         if not start or not target:
-#             return jsonify({"error": "Start and target parameters are required"}), 400
+        # Insert the order into the "orders" collection
+        orders_collection = db['orders']
+        result = orders_collection.insert_one(order)
 
-#         all_paths = graph.find_all_paths(start, target)
-#         shortest_paths = graph.find_shortest_paths(all_paths)
+        # Return success response with the order ID
+        return jsonify({"message": "Order created successfully", "order_id": str(result.inserted_id)}), 201
 
-#         if shortest_paths:
-#             path_obj = shortest_paths[0]
-#             calculated_path = {
-#                 "path": path_obj['path']['path'],
-#                 "directions": path_obj['path']['directions']
-#             }
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
-            
+@app.route('/api/orders', methods=['GET'])
+def get_orders():
+    try:
+        # Retrieve all orders from the "orders" collection
+        orders_collection = db['orders']
+        orders = orders_collection.find()
 
-#             return jsonify({
-#                 "shortest_path": calculated_path
-#             }), 200
-#         else:
-#             return jsonify({"message": "No paths found"}), 200
+        # Convert orders to a list of dictionaries
+        orders_list = []
+        for order in orders:
+            order['_id'] = str(order['_id'])  # Convert ObjectId to string
+            orders_list.append(order)
 
-#     except Exception as e:
-#         return jsonify({"error": str(e)}), 400
+        # Return the list of orders
+        return jsonify({"orders": orders_list}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route('/api/graph', methods=['GET'])
 def get_route_instructions():
@@ -134,14 +146,6 @@ def get_route_instructions():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-
-# @app.route('/calculated_path', methods=['GET'])
-# def get_calculated_path():
-#     global calculated_path
-#     if calculated_path:
-#         return jsonify(calculated_path), 200
-#     else:
-#         return jsonify({"message": "No path calculated yet"}), 404
 
 app.add_url_rule('/health', view_func=health_check)
 

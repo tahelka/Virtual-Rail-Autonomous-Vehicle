@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
 import {
   FormControl,
   InputLabel,
@@ -7,53 +6,72 @@ import {
   MenuItem,
   Button,
   Box,
-  Snackbar,
-  Alert,
   FormHelperText,
+  TextField,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useForm, Controller } from "react-hook-form";
 import CustomSnackbar from "../../Components/CustomSnackbar/CustomSnackbar";
+import { useNavigate } from "react-router-dom";
 
+// Fetch maps
 const fetchMaps = async () => {
   const { data } = await axios.get("http://localhost:5000/api/maps");
   return data;
 };
 
-const ControlPanel = () => {
-  const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
+// Fetch orders
+const fetchOrders = async () => {
+  const { data } = await axios.get("http://localhost:5000/api/orders");
+  return data.orders; // Extract orders array
+};
 
-  const paramMapId = queryParams.get("selectedMap") || "";
-  const paramStart = queryParams.get("startingPoint") || "";
-  const paramDest = queryParams.get("destinationPoint") || "";
-  const paramOrient = queryParams.get("orientation") || "";
+const Orders = () => {
+  const navigate = useNavigate();
 
+  // Fetch maps
   const {
     data: maps,
-    isLoading,
-    error,
+    isLoading: isLoadingMaps,
+    error: errorMaps,
   } = useQuery({
     queryKey: ["maps"],
     queryFn: fetchMaps,
   });
 
+  // Fetch orders
+  const {
+    data: orders = [],
+    isLoading: isLoadingOrders,
+    error: errorOrders,
+  } = useQuery({
+    queryKey: ["orders"],
+    queryFn: fetchOrders,
+    initialData: [], // Ensure initialData is an empty array
+  });
+
   const {
     control,
     handleSubmit,
-    reset,
     watch,
     setValue,
     formState: { errors },
   } = useForm({
     defaultValues: {
-      selectedMap: paramMapId,
-      startingPoint: paramStart,
-      destinationPoint: paramDest,
-      orientation: paramOrient,
+      selectedMap: "",
+      startingPoint: "",
+      destinationPoint: "",
+      contents: "",
     },
-    mode: "onTouched", // Trigger validation on touch
+    mode: "onTouched",
   });
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -62,26 +80,18 @@ const ControlPanel = () => {
 
   useEffect(() => {
     if (maps && watch("selectedMap")) {
-      // Reset points when map changes
       setValue("startingPoint", "");
       setValue("destinationPoint", "");
     }
   }, [watch("selectedMap"), maps, setValue]);
 
-  useEffect(() => {
-    // Reset form values when parameters change
-    reset({
-      selectedMap: paramMapId,
-      startingPoint: paramStart,
-      destinationPoint: paramDest,
-      orientation: paramOrient,
-    });
-  }, [paramMapId, paramStart, paramDest, paramOrient, reset]);
+  if (isLoadingMaps || isLoadingOrders) return <span>Loading...</span>;
+  if (errorMaps) return <span>Error fetching maps.</span>;
+  if (errorOrders) return <span>Error fetching orders.</span>;
 
-  if (isLoading) return <span>Loading...</span>;
-  if (error) return <span>Error fetching maps.</span>;
+  // Log the orders to check its format
+  console.log("Fetched Orders:", orders);
 
-  // Sort maps by creation_time (ascending order) and map them to "Map 1", "Map 2", etc.
   const sortedMaps = [...maps].sort(
     (a, b) => a.creation_time - b.creation_time
   );
@@ -91,29 +101,36 @@ const ControlPanel = () => {
   }));
 
   const onSubmit = async (data) => {
-    const { selectedMap, startingPoint, destinationPoint, orientation } = data;
+    const { selectedMap, startingPoint, destinationPoint, contents } = data;
 
-    // Check if all required fields are filled
-    if (!selectedMap || !startingPoint || !destinationPoint || !orientation) {
+    if (!selectedMap || !startingPoint || !destinationPoint || !contents) {
       setSnackbarSeverity("error");
       setSnackbarMessage("Please fill out all fields.");
       setSnackbarOpen(true);
       return;
     }
 
-    const url = `http://localhost:5000/api/graph?mapid=${selectedMap}&start=${startingPoint}&target=${destinationPoint}&orientation=${orientation}`;
+    const payload = {
+      contents,
+      map: selectedMap,
+      origin: startingPoint,
+      destination: destinationPoint,
+    };
 
     try {
-      const response = await axios.get(url);
+      const response = await axios.post(
+        "http://localhost:5000/api/orders/create",
+        payload
+      );
 
       console.log(response);
 
       setSnackbarSeverity("success");
-      setSnackbarMessage("Request successful!");
+      setSnackbarMessage("Order created successfully!");
     } catch (error) {
       console.log(error);
       setSnackbarSeverity("error");
-      setSnackbarMessage("Error fetching graph data.");
+      setSnackbarMessage("Error creating order.");
     } finally {
       setSnackbarOpen(true);
     }
@@ -127,7 +144,7 @@ const ControlPanel = () => {
   const nodes = sortedMaps.find((map) => map.id === selectedMap)?.data || [];
 
   return (
-    <Box sx={{ padding: 2, maxWidth: 600, margin: "auto", minWidth: 300 }}>
+    <Box sx={{ padding: 2 }}>
       <Box
         component="form"
         sx={{ display: "flex", flexDirection: "column", gap: 2 }}
@@ -148,7 +165,6 @@ const ControlPanel = () => {
                   label="Choose map"
                   onChange={(e) => {
                     field.onChange(e);
-                    // Reset points when map changes
                     setValue("startingPoint", "");
                     setValue("destinationPoint", "");
                   }}
@@ -229,29 +245,21 @@ const ControlPanel = () => {
           />
         </FormControl>
 
-        <FormControl fullWidth error={!!errors.orientation}>
-          <InputLabel id="vehicle-orientation-label">
-            Vehicle Orientation
-          </InputLabel>
+        <FormControl fullWidth error={!!errors.contents}>
           <Controller
-            name="orientation"
+            name="contents"
             control={control}
-            rules={{ required: "Orientation is required" }}
+            rules={{ required: "Contents are required" }}
             render={({ field }) => (
               <>
-                <Select
-                  labelId="vehicle-orientation-label"
-                  id="vehicle-orientation"
+                <TextField
                   {...field}
-                  label="Vehicle Orientation"
-                >
-                  <MenuItem value={"north"}>North</MenuItem>
-                  <MenuItem value={"east"}>East</MenuItem>
-                  <MenuItem value={"south"}>South</MenuItem>
-                  <MenuItem value={"west"}>West</MenuItem>
-                </Select>
-                {errors.orientation && (
-                  <FormHelperText>{errors.orientation.message}</FormHelperText>
+                  label="Contents"
+                  variant="outlined"
+                  fullWidth
+                />
+                {errors.contents && (
+                  <FormHelperText>{errors.contents.message}</FormHelperText>
                 )}
               </>
             )}
@@ -264,7 +272,7 @@ const ControlPanel = () => {
           type="submit"
           sx={{ alignSelf: "flex-start", minWidth: 300 }}
         >
-          Start
+          Add new order
         </Button>
       </Box>
 
@@ -274,8 +282,51 @@ const ControlPanel = () => {
         message={snackbarMessage}
         severity={snackbarSeverity}
       />
+
+      <Box sx={{ marginTop: 4 }}>
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Order ID</TableCell>
+                <TableCell>Contents</TableCell>
+                <TableCell>Map ID</TableCell>
+                <TableCell>Starting Point</TableCell>
+                <TableCell>Destination Point</TableCell>
+                <TableCell>Action</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {Array.isArray(orders) && orders.length > 0 ? (
+                orders.map((order) => (
+                  <TableRow key={order._id}>
+                    <TableCell>{order._id}</TableCell>
+                    <TableCell>{order.contents}</TableCell>
+                    <TableCell>{order.map}</TableCell>
+                    <TableCell>{order.origin}</TableCell>
+                    <TableCell>{order.destination}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => navigate(`/delivery/${order._id}`)}
+                      >
+                        Start Delivery
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6}>No orders available</TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
     </Box>
   );
 };
 
-export default ControlPanel;
+export default Orders;

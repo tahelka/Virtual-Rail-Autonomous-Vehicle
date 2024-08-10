@@ -22,6 +22,8 @@
 
 [x] create temporary login system
 
+[x] created whole new application because of big problems with the previous one
+
 ## Server
 
 [x] create structure for backend server

@@ -7,6 +7,7 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import MapIcon from "@mui/icons-material/Map";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import SettingsIcon from "@mui/icons-material/Settings";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong"; // Import the Orders icon
 import { useNavigate, useLocation } from "react-router-dom";
 
 function CustomList() {
@@ -32,6 +33,23 @@ function CustomList() {
             <DashboardIcon />
           </ListItemIcon>
           <ListItemText primary="Control Panel" />
+        </ListItemButton>
+      </ListItem>
+      <ListItem disablePadding>
+        <ListItemButton
+          onClick={() => navigate("/orders")}
+          sx={{
+            backgroundColor: currentPath === "/orders" ? "lightgray" : "white",
+            "&:hover": {
+              backgroundColor:
+                currentPath === "/orders" ? "lightgray" : "whitesmoke",
+            },
+          }}
+        >
+          <ListItemIcon>
+            <ReceiptLongIcon />
+          </ListItemIcon>
+          <ListItemText primary="Orders" />
         </ListItemButton>
       </ListItem>
       <ListItem disablePadding>
@@ -70,6 +88,7 @@ function CustomList() {
           <ListItemText primary="Statistics" />
         </ListItemButton>
       </ListItem>
+
       <ListItem disablePadding>
         <ListItemButton
           onClick={() => navigate("/settings")}

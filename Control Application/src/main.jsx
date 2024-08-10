@@ -7,6 +7,7 @@ import ControlPanel from "./pages/ControlPanel/ControlPanel.jsx";
 import ManageMaps from "./pages/ManageMaps/ManageMaps.jsx";
 import Statistics from "./pages/Statistics/Statistics.jsx";
 import Settings from "./pages/Settings/Settings.jsx";
+import Orders from "./pages/Orders/Orders.jsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
@@ -22,6 +23,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
             <Route path="/manage-maps" element={<ManageMaps />} />
             <Route path="/statistics" element={<Statistics />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/orders" element={<Orders />} />
           </Route>
         </Routes>
       </BrowserRouter>
