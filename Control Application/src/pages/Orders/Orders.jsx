@@ -15,12 +15,16 @@ import {
   TableHead,
   TableRow,
   Paper,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useForm, Controller } from "react-hook-form";
 import CustomSnackbar from "../../Components/CustomSnackbar/CustomSnackbar";
 import { useNavigate } from "react-router-dom";
+import DeleteIcon from "@mui/icons-material/Delete";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 
 // Fetch maps
 const fetchMaps = async () => {
@@ -36,6 +40,7 @@ const fetchOrders = async () => {
 
 const Orders = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   // Fetch maps
   const {
@@ -92,6 +97,10 @@ const Orders = () => {
   // Log the orders to check its format
   console.log("Fetched Orders:", orders);
 
+  const sortedOrders = orders
+    .slice()
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
   const sortedMaps = [...maps].sort(
     (a, b) => a.creation_time - b.creation_time
   );
@@ -127,6 +136,8 @@ const Orders = () => {
 
       setSnackbarSeverity("success");
       setSnackbarMessage("Order created successfully!");
+
+      queryClient.invalidateQueries(["orders"]);
     } catch (error) {
       console.log(error);
       setSnackbarSeverity("error");
@@ -297,8 +308,8 @@ const Orders = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {Array.isArray(orders) && orders.length > 0 ? (
-                orders.map((order) => (
+              {Array.isArray(sortedOrders) && sortedOrders.length > 0 ? (
+                sortedOrders.map((order) => (
                   <TableRow key={order._id}>
                     <TableCell>{order._id}</TableCell>
                     <TableCell>{order.contents}</TableCell>
@@ -306,17 +317,27 @@ const Orders = () => {
                     <TableCell>{order.origin}</TableCell>
                     <TableCell>{order.destination}</TableCell>
                     <TableCell>
-                      <Button
-                        variant="contained"
-                        color="primary"
+                      <Tooltip title="Redirects to control-panel page with pre-selected parameters">
+                        <IconButton
+                          color="primary"
+                          onClick={() =>
+                            navigate(
+                              `/control-panel?selectedMap=${order.map}&startingPoint=${order.origin}&destinationPoint=${order.destination}`
+                            )
+                          }
+                        >
+                          <PlayArrowIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <IconButton
+                        color="secondary"
                         onClick={() =>
-                          navigate(
-                            `/control-panel?selectedMap=${order.map}&startingPoint=${order.origin}&destinationPoint=${order.destination}`
-                          )
+                          // Add logic to delete the order
+                          console.log("Delete Order:", order._id)
                         }
                       >
-                        Start Delivery
-                      </Button>
+                        <DeleteIcon />
+                      </IconButton>
                     </TableCell>
                   </TableRow>
                 ))
