@@ -32,7 +32,12 @@ const menuItems = [
     tooltip:
       "This page lets you create new orders, view all existing orders, and initiate new deliveries.",
   },
-  { text: "Manage Maps", icon: <MapIcon />, path: "/manage-maps" },
+  {
+    text: "Manage Maps",
+    icon: <MapIcon />,
+    path: "/manage-maps",
+    tooltip: "This page allows you to create new maps",
+  },
   { text: "Statistics", icon: <BarChartIcon />, path: "/statistics" },
   { text: "Settings", icon: <SettingsIcon />, path: "/settings" },
 ];
