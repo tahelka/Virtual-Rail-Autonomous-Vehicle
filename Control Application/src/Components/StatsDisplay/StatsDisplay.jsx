@@ -22,7 +22,7 @@ ChartJS.register(
   Legend
 );
 
-const WebSocketCharts = () => {
+const StatsDisplay = () => {
   const [offsetData, setOffsetData] = useState([]);
   const [speedData, setSpeedData] = useState([]);
   const [viewWindow, setViewWindow] = useState(10);
@@ -253,4 +253,4 @@ const WebSocketCharts = () => {
   );
 };
 
-export default WebSocketCharts;
+export default StatsDisplay;
