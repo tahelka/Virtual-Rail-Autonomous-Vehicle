@@ -7,6 +7,10 @@ import threading
 import os
 import uuid
 import json
+import asyncio
+import websockets
+import logging
+import random
 from pymongo import MongoClient
 from datetime import datetime
 from bson import ObjectId
@@ -288,6 +292,80 @@ def list_maps():
         return jsonify({"error": str(e)}), 400
 
 
+# WebSocket server code
+logging.basicConfig(level=logging.INFO)
+history = []
+HISTORY_DIR = "history_files"
+os.makedirs(HISTORY_DIR, exist_ok=True)
+async def send_data(websocket, path):
+    global history
+    start_time = time.time()
+    trip_id = str(uuid.uuid4())
+    try:
+        while time.time() - start_time < 15:
+            avg_offset = random.uniform(-100, 100)
+            speed = random.uniform(20, 120)
+            data = {
+                "avg_offset": avg_offset,
+                "speed": speed,
+                "timestamp": time.time()
+            }
+            history.append(data)
+            await websocket.send(json.dumps({"type": "data", "payload": data}))
+            await asyncio.sleep(1)
+        filename = f"{trip_id}.json"
+        filepath = os.path.join(HISTORY_DIR, filename)
+        with open(filepath, 'w') as f:
+            json.dump(history, f)
+        logging.info(f"History automatically saved as {filename}")
+        await websocket.send(json.dumps({
+            "type": "end",
+            "message": "Real-time data ended and history saved",
+            "tripId": trip_id
+        }))
+        history = []
+        while True:
+            message = await websocket.recv()
+            try:
+                data = json.loads(message)
+                if data['type'] == 'load':
+                    filepath = os.path.join(HISTORY_DIR, f"{data['tripId']}.json")
+                    if os.path.exists(filepath):
+                        with open(filepath, 'r') as f:
+                            loaded_history = json.load(f)
+                        await websocket.send(json.dumps({"type": "load", "payload": loaded_history}))
+                        logging.info(f"History loaded and sent to client: {data['tripId']}")
+                    else:
+                        await websocket.send(json.dumps({"type": "load", "message": "No history found"}))
+                        logging.warning(f"No history file found for trip ID: {data['tripId']}")
+                elif data['type'] == 'list_histories':
+                    history_files = [f.split('.')[0] for f in os.listdir(HISTORY_DIR) if f.endswith('.json')]
+                    await websocket.send(json.dumps({"type": "history_list", "payload": history_files}))
+                    logging.info("Sent list of history files to client")
+                else:
+                    logging.warning(f"Unknown message type: {data['type']}")
+            except json.JSONDecodeError:
+                logging.error(f"Invalid JSON received: {message}")
+            except KeyError:
+                logging.error(f"Invalid message format: {message}")
+    except websockets.exceptions.ConnectionClosed:
+        logging.info("Connection closed")
+    except Exception as e:
+        logging.error(f"An error occurred: {str(e)}")
+async def main():
+    websocket_server = await websockets.serve(send_data, "localhost", 8765)
+    logging.info("WebSocket server started on ws://localhost:8765")
+    
+    # Start Flask in a separate thread
+    flask_thread = threading.Thread(target=lambda: app.run(debug=True, port=5000, use_reloader=False))
+    flask_thread.start()
+    # Keep the WebSocket server running
+    await asyncio.Future()  # This will keep the main function running indefinitely
+
 if __name__ == '__main__':
-    from config import DEFAULT_PORT
-    app.run(debug=True, port=DEFAULT_PORT)
+    asyncio.run(main())
+
+
+# if __name__ == '__main__':
+#     from config import DEFAULT_PORT
+#     app.run(debug=True, port=DEFAULT_PORT)
