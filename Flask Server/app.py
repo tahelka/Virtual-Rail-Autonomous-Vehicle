@@ -233,7 +233,7 @@ def get_route_instructions():
             # Create a new trip document
             trip_id = str(uuid.uuid4())  # Generate a unique ID for the trip
             trip_document = {
-                # "_id": trip_id,
+                "_id": trip_id,
                 "map_id": mapid,
                 "order_id": orderid,
                 "starting_point": start,
