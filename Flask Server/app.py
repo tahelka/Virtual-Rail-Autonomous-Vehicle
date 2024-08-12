@@ -61,13 +61,14 @@ def insert_vehicle_checkpoint():
         'checkpoint_id': data['checkpoint_id'],
         'map_id': data['map_id'],
         'avg_offset': data['average_offset'],
-        'created_at': datetime.utcnow()
+        'created_at': datetime.now()
     }
+
+    checkpoint_doc['created_at'] = checkpoint_doc['created_at'].strftime("%Y-%m-%d %H:%M:%S") 
 
     result = vehicle_checkpoints_collection.insert_one(checkpoint_doc)
 
-    checkpoint_doc['_id'] = str(checkpoint_doc['_id'])  # Convert ObjectId to string
-    checkpoint_doc['created_at'] = checkpoint_doc['created_at'].isoformat()  # Convert datetime to string
+    checkpoint_doc['_id'] = str(checkpoint_doc['_id']) 
     socketio.emit('checkpoint_data', checkpoint_doc)
 
     return jsonify({'result': 'success', 'inserted_id': str(result.inserted_id)}), 200
@@ -238,7 +239,7 @@ def get_route_instructions():
                 "starting_point": start,
                 "destination_point": target,
                 "starting_orientation": orientation,
-                "created_at": datetime.utcnow(),
+                "created_at": datetime.now(),
                 "directions": calculated_path["directions"],
                 "path": calculated_path["path"],
                 "arrived_at_destination": False,
@@ -271,7 +272,7 @@ def save_map():
         map_id = str(uuid.uuid4())
         
         # Get the current time
-        creation_time = datetime.utcnow()
+        creation_time = datetime.now()
         
         # Save the map data to the MongoDB collection
         result = maps_collection.insert_one({
@@ -316,7 +317,7 @@ def list_maps():
             
             # Use a default value if creation_time is missing
             if creation_time is None:
-                creation_time = datetime.utcnow()  # Default to current time
+                creation_time = datetime.now()  # Default to current time
             else:
                 # Ensure creation_time is a datetime object
                 if isinstance(creation_time, str):

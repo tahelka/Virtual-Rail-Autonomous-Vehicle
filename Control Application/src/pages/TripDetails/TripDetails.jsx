@@ -12,7 +12,7 @@ import TimelineDot from "@mui/lab/TimelineDot";
 import { Start as StartIcon, Flag as FlagIcon } from "@mui/icons-material";
 import io from "socket.io-client";
 
-const socket = io("http://localhost:5000"); // Replace with your server URL
+const socket = io("http://localhost:5000");
 
 const TripDetails = () => {
   const { tripId } = useParams();
@@ -46,11 +46,9 @@ const TripDetails = () => {
     fetchTripData();
     fetchCheckpointsData();
 
-    // Set up Socket.IO listener for real-time updates
     socket.on("checkpoint_data", (newCheckpoint) => {
       console.log("New checkpoint received:", newCheckpoint);
 
-      //check if the newCheckpoint belongs to the current trip
       if (newCheckpoint.trip_id !== tripId) return;
 
       setCheckpointsData((prevCheckpoints) => [
@@ -59,13 +57,13 @@ const TripDetails = () => {
       ]);
     });
 
-    // Cleanup on component unmount
     return () => {
       socket.off("checkpoint_data");
     };
   }, [tripId]);
 
   const formatTime = (dateString) => {
+    console.log(dateString);
     const date = new Date(dateString);
     return (
       date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) ?? ""
@@ -101,9 +99,7 @@ const TripDetails = () => {
               variant="body2"
               color="text.secondary"
             >
-              {checkpoint.created_at !== ""
-                ? formatTime(checkpoint.created_at)
-                : ""}
+              {checkpoint.created_at !== "" ? checkpoint.created_at : ""}
             </TimelineOppositeContent>
             <TimelineSeparator>
               {index !== 0 && <TimelineConnector />}

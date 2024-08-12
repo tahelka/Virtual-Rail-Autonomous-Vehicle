@@ -57,7 +57,15 @@ const Trips = () => {
                   Trip ID: {trip._id}
                 </Typography>
                 <Typography color="textSecondary">
-                  Created At: {new Date(trip.created_at).toLocaleString()}
+                  Created At:{" "}
+                  {new Date(trip.created_at).toLocaleString("en-GB", {
+                    timeZone: "UTC",
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </Typography>
                 <Typography color="textSecondary">
                   Starting Point: {trip.starting_point}
