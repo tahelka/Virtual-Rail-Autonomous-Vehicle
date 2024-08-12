@@ -10,6 +10,9 @@ import TimelineContent from "@mui/lab/TimelineContent";
 import TimelineOppositeContent from "@mui/lab/TimelineOppositeContent";
 import TimelineDot from "@mui/lab/TimelineDot";
 import { Start as StartIcon, Flag as FlagIcon } from "@mui/icons-material";
+import io from "socket.io-client";
+
+const socket = io("http://localhost:5000"); // Replace with your server URL
 
 const TripDetails = () => {
   const { tripId } = useParams();
@@ -42,6 +45,24 @@ const TripDetails = () => {
 
     fetchTripData();
     fetchCheckpointsData();
+
+    // Set up Socket.IO listener for real-time updates
+    socket.on("checkpoint_data", (newCheckpoint) => {
+      console.log("New checkpoint received:", newCheckpoint);
+
+      //check if the newCheckpoint belongs to the current trip
+      if (newCheckpoint.trip_id !== tripId) return;
+
+      setCheckpointsData((prevCheckpoints) => [
+        ...prevCheckpoints,
+        newCheckpoint,
+      ]);
+    });
+
+    // Cleanup on component unmount
+    return () => {
+      socket.off("checkpoint_data");
+    };
   }, [tripId]);
 
   const formatTime = (dateString) => {
