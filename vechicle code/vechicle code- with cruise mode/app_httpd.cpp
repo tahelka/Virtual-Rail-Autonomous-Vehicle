@@ -18,6 +18,7 @@ extern int gpLed;
 extern String WiFiAddr;
 
 const uint8_t regular_speed = 100;
+const uint8_t cruise_speed = 85;
 //const uint8_t reverse_speed = 100;
 const uint8_t high_speed = 180;
 const uint8_t turn_speed = 110;
@@ -436,61 +437,20 @@ static esp_err_t action_handler(httpd_req_t *req){
                 } 
                 // cruise mode
                 else if (strcmp(param, "cgo") == 0) {
-                    WheelAct(regular_speed, LOW, regular_speed, LOW); // Move forward continuously (cruise mode)
-                } 
-                /*
-                // Move backward
-                else if (strcmp(param, "back") == 0) {
-                    WheelAct(LOW, reverse_speed, LOW, reverse_speed); // Move backward
-                    delay(175);
+                    WheelAct(cruise_speed, LOW, cruise_speed, LOW); // Move forward continuously (cruise mode)
+                }
+                //turn around
+                else if (strcmp(param, "turnAround") == 0) {
                     WheelAct(LOW, LOW, LOW, LOW); // Stop
-                } 
-                */
-
-                /*
-                // Move backward and turn left
-                else if (strcmp(param, "leftBack") == 0) {
-                    WheelAct(LOW, reverse_speed, LOW, reverse_speed); // Move backward
-                    delay(15);
-                    WheelAct(turn_speed, LOW, LOW, turn_speed); // Turn left
-                    delay(100);
+                    delay(200);
+                    WheelAct(LOW, high_speed, high_speed, LOW); // Turn around from the right at high speed
+                    delay(1200);
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                    delay(200);
+                    WheelAct(regular_speed, LOW, regular_speed, LOW); // Move forward
+                    delay(200);
                     WheelAct(LOW, LOW, LOW, LOW); // Stop
                 } 
-                
-                // Move backward and turn right
-                else if (strcmp(param, "rightBack") == 0) {
-                    WheelAct(LOW, reverse_speed, LOW, reverse_speed); // Move backward
-                    delay(15);
-                    WheelAct(LOW, turn_speed, turn_speed, LOW); // Turn right
-                    delay(100);
-                    WheelAct(LOW, LOW, LOW, LOW); // Stop
-                } 
-        
-                // Move backward, turn left at high speed
-                else if (strcmp(param, "TurnLeftBack") == 0) {
-                    WheelAct(LOW, LOW, LOW, LOW); // Stop
-                    delay(200);
-                    WheelAct(LOW, reverse_speed, LOW, reverse_speed); // Move backward
-                    delay(200);
-                    WheelAct(LOW, LOW, LOW, LOW); // Stop
-                    delay(200);
-                    WheelAct(high_speed, LOW, LOW, high_speed); // Turn left at high speed
-                    delay(600);
-                    WheelAct(LOW, LOW, LOW, LOW); // Stop
-                } 
-                // Move backward, turn right at high speed
-                else if (strcmp(param, "TurnRightBack") == 0) {
-                    WheelAct(LOW, LOW, LOW, LOW); // Stop
-                    delay(200);
-                    WheelAct(LOW, reverse_speed, LOW, reverse_speed); // Move backward
-                    delay(200);
-                    WheelAct(LOW, LOW, LOW, LOW); // Stop
-                    delay(200);
-                    WheelAct(LOW, high_speed, high_speed, LOW); // Turn right at high speed
-                    delay(600);
-                    WheelAct(LOW, LOW, LOW, LOW); // Stop
-                }  
-                */
             }
         }
         free(buf);
