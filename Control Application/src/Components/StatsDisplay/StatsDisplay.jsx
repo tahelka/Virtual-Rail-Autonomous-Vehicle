@@ -112,7 +112,7 @@ const StatsDisplay = () => {
     
     // Start the new data stream
     if (socketRef.current && socketRef.current.connected) {
-      socketRef.current.emit('start_data');
+      socketRef.current.emit('trip_started');
       setIsLive(true);
       setSnackbar({ open: true, message: 'Started a new trip', severity: 'success' });
     } else {

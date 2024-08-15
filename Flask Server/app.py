@@ -350,8 +350,9 @@ def handle_connect():
 def handle_disconnect():
     print('Client disconnected')
 
-@socketio.on('start_data')
-def handle_start_data():
+# get dummy data for stats
+@socketio.on('trip_started')
+def handle_trip_started():
     global history
     history = []
     start_time = time.time()
@@ -361,26 +362,64 @@ def handle_start_data():
         avg_offset = random.uniform(-100, 100)
         speed = random.uniform(20, 120)
         data = {
-            "avg_offset": avg_offset,
-            "speed": speed,
-            "timestamp": time.time()
+            'avg_offset': avg_offset,
+            'speed': speed,
+            'timestamp': time.time()
         }
         history.append(data)
         socketio.emit('data', {"type": "data", "payload": data})
         socketio.sleep(1)
 
     history_document = {
-        "trip_id": trip_id,
-        "history": history,
-        "created_at": datetime.utcnow()
+        'trip_id': trip_id,
+        'history': history,
+        'created_at': datetime.utcnow()
     }
     db['history'].insert_one(history_document)
     logging.info(f"History automatically saved in MongoDB for trip ID: {trip_id}")
     socketio.emit('end', {
-        "type": "end",
-        "message": "Real-time data ended and history saved",
-        "tripId": trip_id
+        'type': "end",
+        'message': "Real-time data ended and history saved",
+        'tripId': trip_id
     })
+
+# get data from the car
+# @socketio.on('trip_started')
+# def handle_trip_started(data):
+#     global history
+#     if 'history' not in globals():
+#         history = []
+
+#     trip_id = data.get('trip_id')
+#     avg_offset = data.get('avg_offset')
+#     speed = data.get('avg_speed')
+#     timestamp = data.get('curr_time')
+
+#     entry = {
+#         'avg_offset': avg_offset,
+#         'speed': speed,
+#         'timestamp': timestamp
+#     }
+#     history.append(entry)
+#     socketio.emit('data', {'type': 'data', 'payload': entry})
+
+#     history_document = {
+#         'trip_id': trip_id,
+#         'history': history,
+#         'created_at': datetime.utcnow()
+#     }
+#     db['history'].insert_one(history_document)
+#     logging.info(f'History automatically saved in MongoDB for trip ID: {trip_id}')
+
+#     # Check if the trip has arrived at the destination
+#     trip_info = db['trips'].find_one({'_id': trip_id})
+#     if trip_info and trip_info.get('arrived_at_destination', False):
+#         socketio.emit('end', {
+#             'type': 'end',
+#             'message': 'Real-time data ended and history saved',
+#             'tripId': trip_id
+#         })
+
 
 @socketio.on('load')
 def handle_load(data):
@@ -410,7 +449,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     from config import DEFAULT_PORT
     socketio.run(app, debug=True, port=DEFAULT_PORT)
-    
+
 ###
 
 # @socketio.on('connect')
