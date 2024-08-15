@@ -340,93 +340,89 @@ def list_maps():
         return jsonify({"error": str(e)}), 400
 
 
-# WebSocket server code
-# logging.basicConfig(level=logging.INFO)
-# history = []
-# HISTORY_DIR = "history_files"
-# os.makedirs(HISTORY_DIR, exist_ok=True)
-# async def send_data(websocket, path):
-#     global history
-#     start_time = time.time()
-#     trip_id = str(uuid.uuid4())
-#     try:
-#         while time.time() - start_time < 15:
-#             avg_offset = random.uniform(-100, 100)
-#             speed = random.uniform(20, 120)
-#             data = {
-#                 "avg_offset": avg_offset,
-#                 "speed": speed,
-#                 "timestamp": time.time()
-#             }
-#             history.append(data)
-#             await websocket.send(json.dumps({"type": "data", "payload": data}))
-#             await asyncio.sleep(1)
-#         filename = f"{trip_id}.json"
-#         filepath = os.path.join(HISTORY_DIR, filename)
-#         with open(filepath, 'w') as f:
-#             json.dump(history, f)
-#         logging.info(f"History automatically saved as {filename}")
-#         await websocket.send(json.dumps({
-#             "type": "end",
-#             "message": "Real-time data ended and history saved",
-#             "tripId": trip_id
-#         }))
-#         history = []
-#         while True:
-#             message = await websocket.recv()
-#             try:
-#                 data = json.loads(message)
-#                 if data['type'] == 'load':
-#                     filepath = os.path.join(HISTORY_DIR, f"{data['tripId']}.json")
-#                     if os.path.exists(filepath):
-#                         with open(filepath, 'r') as f:
-#                             loaded_history = json.load(f)
-#                         await websocket.send(json.dumps({"type": "load", "payload": loaded_history}))
-#                         logging.info(f"History loaded and sent to client: {data['tripId']}")
-#                     else:
-#                         await websocket.send(json.dumps({"type": "load", "message": "No history found"}))
-#                         logging.warning(f"No history file found for trip ID: {data['tripId']}")
-#                 elif data['type'] == 'list_histories':
-#                     history_files = [f.split('.')[0] for f in os.listdir(HISTORY_DIR) if f.endswith('.json')]
-#                     await websocket.send(json.dumps({"type": "history_list", "payload": history_files}))
-#                     logging.info("Sent list of history files to client")
-#                 else:
-#                     logging.warning(f"Unknown message type: {data['type']}")
-#             except json.JSONDecodeError:
-#                 logging.error(f"Invalid JSON received: {message}")
-#             except KeyError:
-#                 logging.error(f"Invalid message format: {message}")
-#     except websockets.exceptions.ConnectionClosed:
-#         logging.info("Connection closed")
-#     except Exception as e:
-#         logging.error(f"An error occurred: {str(e)}")
-# async def main():
-#     websocket_server = await websockets.serve(send_data, "localhost", 8765)
-#     logging.info("WebSocket server started on ws://localhost:8765")
-    
-#     # Start Flask in a separate thread
-#     flask_thread = threading.Thread(target=lambda: app.run(debug=True, port=5000, use_reloader=False))
-#     flask_thread.start()
-#     # Keep the WebSocket server running
-#     await asyncio.Future()  # This will keep the main function running indefinitely
-
-# if __name__ == '__main__':
-#     asyncio.run(main())
-
-
-# if __name__ == '__main__':
-#     asyncio.run(main())
-
+###
+# Socket.IO event handlers
 @socketio.on('connect')
 def handle_connect():
-    print("Client connected")
-    emit('response', {'message': 'Connected to server'})
+    print('Client connected')
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    print("Client disconnected")
+    print('Client disconnected')
 
+@socketio.on('start_data')
+def handle_start_data():
+    global history
+    history = []
+    start_time = time.time()
+    trip_id = str(uuid.uuid4())
+
+    while time.time() - start_time < 15:
+        avg_offset = random.uniform(-100, 100)
+        speed = random.uniform(20, 120)
+        data = {
+            "avg_offset": avg_offset,
+            "speed": speed,
+            "timestamp": time.time()
+        }
+        history.append(data)
+        socketio.emit('data', {"type": "data", "payload": data})
+        socketio.sleep(1)
+
+    history_document = {
+        "trip_id": trip_id,
+        "history": history,
+        "created_at": datetime.utcnow()
+    }
+    db['history'].insert_one(history_document)
+    logging.info(f"History automatically saved in MongoDB for trip ID: {trip_id}")
+    socketio.emit('end', {
+        "type": "end",
+        "message": "Real-time data ended and history saved",
+        "tripId": trip_id
+    })
+
+@socketio.on('load')
+def handle_load(data):
+    trip_id = data['tripId']
+    
+    # Retrieve the history of a specific trip from MongoDB
+    history_document = db['history'].find_one({"trip_id": trip_id})
+    
+    if history_document:
+        loaded_history = history_document['history']
+        socketio.emit('load', {"type": "load", "payload": loaded_history})
+        logging.info(f"History loaded and sent to client from MongoDB: {trip_id}")
+    else:
+        socketio.emit('load', {"type": "load", "message": "No history found"})
+        logging.warning(f"No history found in MongoDB for trip ID: {trip_id}")
+
+@socketio.on('list_histories')
+def handle_list_histories():
+    # Retrieve list of trip IDs from MongoDB
+    history_documents = db['history'].find({}, {"trip_id": 1})
+    history_files = [doc['trip_id'] for doc in history_documents]
+    
+    socketio.emit('history_list', {"type": "history_list", "payload": history_files})
+    logging.info("Sent list of history records to client from MongoDB")
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
     from config import DEFAULT_PORT
     socketio.run(app, debug=True, port=DEFAULT_PORT)
+    
+###
+
+# @socketio.on('connect')
+# def handle_connect():
+#     print("Client connected")
+#     emit('response', {'message': 'Connected to server'})
+
+# @socketio.on('disconnect')
+# def handle_disconnect():
+#     print("Client disconnected")
+
+
+# if __name__ == '__main__':
+#     from config import DEFAULT_PORT
+#     socketio.run(app, debug=True, port=DEFAULT_PORT)
