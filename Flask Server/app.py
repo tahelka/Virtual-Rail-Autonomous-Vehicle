@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 from graph import Graph
 from health import health_check
@@ -12,9 +12,10 @@ import random
 from pymongo import MongoClient
 from datetime import datetime
 from bson import ObjectId
+from bson.json_util import dumps
 
 app = Flask(__name__)
-CORS(app) # Enable CORS for all routes
+CORS(app)  # Enable CORS for all routes
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # MongoDB connection setup
@@ -23,6 +24,54 @@ db = client['talide']
 maps_collection = db['maps']
 trips_collection = db['trips']
 orders_collection = db['orders']
+vehicle_checkpoints_collection = db['vehicle_checkpoints']
+
+def serialize_document(doc):
+    if '_id' in doc:
+        doc['_id'] = str(doc['_id'])  
+    return doc
+
+@app.route('/api/vehicle_checkpoints/<trip_id>', methods=['GET'])
+def get_checkpoints_by_trip(trip_id):
+    
+    checkpoints = vehicle_checkpoints_collection.find({'trip_id': trip_id})
+    
+    
+    checkpoints_list = [serialize_document(doc) for doc in checkpoints]
+    
+    
+    if not checkpoints_list:
+        return jsonify({'error': 'No checkpoints found for this trip_id'}), 404
+
+    
+    return jsonify(checkpoints_list), 200
+
+@app.route('/api/vehicle_checkpoints', methods=['POST'])
+def insert_vehicle_checkpoint():
+    data = request.json
+
+    required_fields = ['trip_id', 'map_id', 'checkpoint_id', 'average_offset']
+
+    for field in required_fields:
+        if field not in data:
+            return jsonify({'error': f'Missing field: {field}'}), 400
+
+    checkpoint_doc = {
+        'trip_id': data['trip_id'],
+        'checkpoint_id': data['checkpoint_id'],
+        'map_id': data['map_id'],
+        'avg_offset': data['average_offset'],
+        'created_at': datetime.now()
+    }
+
+    checkpoint_doc['created_at'] = checkpoint_doc['created_at'].strftime("%Y-%m-%d %H:%M:%S") 
+
+    result = vehicle_checkpoints_collection.insert_one(checkpoint_doc)
+
+    checkpoint_doc['_id'] = str(checkpoint_doc['_id']) 
+    socketio.emit('checkpoint_data', checkpoint_doc)
+
+    return jsonify({'result': 'success', 'inserted_id': str(result.inserted_id)}), 200
 
 @app.route('/api/trips', methods=['GET'])
 def get_trips():
@@ -184,13 +233,13 @@ def get_route_instructions():
             # Create a new trip document
             trip_id = str(uuid.uuid4())  # Generate a unique ID for the trip
             trip_document = {
-                # "_id": trip_id,
+                "_id": trip_id,
                 "map_id": mapid,
                 "order_id": orderid,
                 "starting_point": start,
                 "destination_point": target,
                 "starting_orientation": orientation,
-                "created_at": datetime.utcnow(),
+                "created_at": datetime.now(),
                 "directions": calculated_path["directions"],
                 "path": calculated_path["path"],
                 "arrived_at_destination": False,
@@ -223,7 +272,7 @@ def save_map():
         map_id = str(uuid.uuid4())
         
         # Get the current time
-        creation_time = datetime.utcnow()
+        creation_time = datetime.now()
         
         # Save the map data to the MongoDB collection
         result = maps_collection.insert_one({
@@ -268,7 +317,7 @@ def list_maps():
             
             # Use a default value if creation_time is missing
             if creation_time is None:
-                creation_time = datetime.utcnow()  # Default to current time
+                creation_time = datetime.now()  # Default to current time
             else:
                 # Ensure creation_time is a datetime object
                 if isinstance(creation_time, str):
@@ -290,71 +339,94 @@ def list_maps():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# Socket.IO event handlers
+
+# WebSocket server code
+# logging.basicConfig(level=logging.INFO)
+# history = []
+# HISTORY_DIR = "history_files"
+# os.makedirs(HISTORY_DIR, exist_ok=True)
+# async def send_data(websocket, path):
+#     global history
+#     start_time = time.time()
+#     trip_id = str(uuid.uuid4())
+#     try:
+#         while time.time() - start_time < 15:
+#             avg_offset = random.uniform(-100, 100)
+#             speed = random.uniform(20, 120)
+#             data = {
+#                 "avg_offset": avg_offset,
+#                 "speed": speed,
+#                 "timestamp": time.time()
+#             }
+#             history.append(data)
+#             await websocket.send(json.dumps({"type": "data", "payload": data}))
+#             await asyncio.sleep(1)
+#         filename = f"{trip_id}.json"
+#         filepath = os.path.join(HISTORY_DIR, filename)
+#         with open(filepath, 'w') as f:
+#             json.dump(history, f)
+#         logging.info(f"History automatically saved as {filename}")
+#         await websocket.send(json.dumps({
+#             "type": "end",
+#             "message": "Real-time data ended and history saved",
+#             "tripId": trip_id
+#         }))
+#         history = []
+#         while True:
+#             message = await websocket.recv()
+#             try:
+#                 data = json.loads(message)
+#                 if data['type'] == 'load':
+#                     filepath = os.path.join(HISTORY_DIR, f"{data['tripId']}.json")
+#                     if os.path.exists(filepath):
+#                         with open(filepath, 'r') as f:
+#                             loaded_history = json.load(f)
+#                         await websocket.send(json.dumps({"type": "load", "payload": loaded_history}))
+#                         logging.info(f"History loaded and sent to client: {data['tripId']}")
+#                     else:
+#                         await websocket.send(json.dumps({"type": "load", "message": "No history found"}))
+#                         logging.warning(f"No history file found for trip ID: {data['tripId']}")
+#                 elif data['type'] == 'list_histories':
+#                     history_files = [f.split('.')[0] for f in os.listdir(HISTORY_DIR) if f.endswith('.json')]
+#                     await websocket.send(json.dumps({"type": "history_list", "payload": history_files}))
+#                     logging.info("Sent list of history files to client")
+#                 else:
+#                     logging.warning(f"Unknown message type: {data['type']}")
+#             except json.JSONDecodeError:
+#                 logging.error(f"Invalid JSON received: {message}")
+#             except KeyError:
+#                 logging.error(f"Invalid message format: {message}")
+#     except websockets.exceptions.ConnectionClosed:
+#         logging.info("Connection closed")
+#     except Exception as e:
+#         logging.error(f"An error occurred: {str(e)}")
+# async def main():
+#     websocket_server = await websockets.serve(send_data, "localhost", 8765)
+#     logging.info("WebSocket server started on ws://localhost:8765")
+    
+#     # Start Flask in a separate thread
+#     flask_thread = threading.Thread(target=lambda: app.run(debug=True, port=5000, use_reloader=False))
+#     flask_thread.start()
+#     # Keep the WebSocket server running
+#     await asyncio.Future()  # This will keep the main function running indefinitely
+
+# if __name__ == '__main__':
+#     asyncio.run(main())
+
+
+# if __name__ == '__main__':
+#     asyncio.run(main())
+
 @socketio.on('connect')
 def handle_connect():
-    print('Client connected')
+    print("Client connected")
+    emit('response', {'message': 'Connected to server'})
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    print('Client disconnected')
+    print("Client disconnected")
 
-@socketio.on('start_data')
-def handle_start_data():
-    global history
-    history = []
-    start_time = time.time()
-    trip_id = str(uuid.uuid4())
-
-    while time.time() - start_time < 15:
-        avg_offset = random.uniform(-100, 100)
-        speed = random.uniform(20, 120)
-        data = {
-            "avg_offset": avg_offset,
-            "speed": speed,
-            "timestamp": time.time()
-        }
-        history.append(data)
-        socketio.emit('data', {"type": "data", "payload": data})
-        socketio.sleep(1)
-
-    filename = f"{trip_id}.json"
-    filepath = os.path.join(HISTORY_DIR, filename)
-    with open(filepath, 'w') as f:
-        json.dump(history, f)
-    logging.info(f"History automatically saved as {filename}")
-    socketio.emit('end', {
-        "type": "end",
-        "message": "Real-time data ended and history saved",
-        "tripId": trip_id
-    })
-
-@socketio.on('load')
-def handle_load(data):
-    trip_id = data['tripId']
-    filepath = os.path.join(HISTORY_DIR, f"{trip_id}.json")
-    if os.path.exists(filepath):
-        with open(filepath, 'r') as f:
-            loaded_history = json.load(f)
-        socketio.emit('load', {"type": "load", "payload": loaded_history})
-        logging.info(f"History loaded and sent to client: {trip_id}")
-    else:
-        socketio.emit('load', {"type": "load", "message": "No history found"})
-        logging.warning(f"No history file found for trip ID: {trip_id}")
-
-@socketio.on('list_histories')
-def handle_list_histories():
-    history_files = [f.split('.')[0] for f in os.listdir(HISTORY_DIR) if f.endswith('.json')]
-    socketio.emit('history_list', {"type": "history_list", "payload": history_files})
-    logging.info("Sent list of history files to client")
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
-    HISTORY_DIR = "history_files"
-    os.makedirs(HISTORY_DIR, exist_ok=True)
     from config import DEFAULT_PORT
     socketio.run(app, debug=True, port=DEFAULT_PORT)
-
-# if __name__ == '__main__':
-#     from config import DEFAULT_PORT
-#     app.run(debug=True, port=DEFAULT_PORT)

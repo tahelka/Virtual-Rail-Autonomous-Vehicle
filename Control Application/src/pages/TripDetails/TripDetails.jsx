@@ -1,115 +1,138 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-import {
-  Container,
-  Typography,
-  CircularProgress,
-  Alert,
-  Paper,
-  Grid,
-  Box,
-} from "@mui/material";
+import { Grid, Typography } from "@mui/material";
+import Timeline from "@mui/lab/Timeline";
+import TimelineItem from "@mui/lab/TimelineItem";
+import TimelineSeparator from "@mui/lab/TimelineSeparator";
+import TimelineConnector from "@mui/lab/TimelineConnector";
+import TimelineContent from "@mui/lab/TimelineContent";
+import TimelineOppositeContent from "@mui/lab/TimelineOppositeContent";
+import TimelineDot from "@mui/lab/TimelineDot";
+import { Start as StartIcon, Flag as FlagIcon } from "@mui/icons-material";
+import io from "socket.io-client";
+
+const socket = io("http://localhost:5000");
 
 const TripDetails = () => {
   const { tripId } = useParams();
-  const [trip, setTrip] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [tripData, setTripData] = useState(null);
+  const [checkpointsData, setCheckpointsData] = useState([]);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchTripDetails = async () => {
+    const fetchTripData = async () => {
       try {
-        const response = await axios.get(
+        const tripResponse = await axios.get(
           `http://localhost:5000/api/trips/${tripId}`
         );
-        setTrip(response.data);
+        setTripData(tripResponse.data);
       } catch (err) {
-        setError(err.response?.data?.error || "An error occurred");
-      } finally {
-        setLoading(false);
+        setError("Error fetching trip data.");
       }
     };
 
-    fetchTripDetails();
+    const fetchCheckpointsData = async () => {
+      try {
+        const checkpointsResponse = await axios.get(
+          `http://localhost:5000/api/vehicle_checkpoints/${tripId}`
+        );
+        setCheckpointsData(checkpointsResponse.data);
+      } catch (err) {
+        setError("Error fetching checkpoints data.");
+      }
+    };
+
+    fetchTripData();
+    fetchCheckpointsData();
+
+    socket.on("checkpoint_data", (newCheckpoint) => {
+      console.log("New checkpoint received:", newCheckpoint);
+
+      if (newCheckpoint.trip_id !== tripId) return;
+
+      setCheckpointsData((prevCheckpoints) => [
+        ...prevCheckpoints,
+        newCheckpoint,
+      ]);
+    });
+
+    return () => {
+      socket.off("checkpoint_data");
+    };
   }, [tripId]);
 
-  if (loading)
-    return <CircularProgress sx={{ display: "block", margin: "auto" }} />;
-  if (error) return <Alert severity="error">{error}</Alert>;
+  const formatTime = (dateString) => {
+    console.log(dateString);
+    const date = new Date(dateString);
+    return (
+      date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) ?? ""
+    );
+  };
+
+  function mapPathToCreatedAt(tripData, checkpointsData) {
+    if (!tripData || !checkpointsData) {
+      return [];
+    }
+
+    const checkpointsDict = checkpointsData.reduce((acc, checkpoint) => {
+      acc[checkpoint.checkpoint_id] = checkpoint.created_at;
+      return acc;
+    }, {});
+
+    return tripData.path.map((checkpointId) => ({
+      checkpoint_id: checkpointId,
+      created_at: checkpointsDict[checkpointId] || "",
+    }));
+  }
+
+  const timelineData = mapPathToCreatedAt(tripData, checkpointsData);
 
   return (
-    <Container component="main" maxWidth="lg">
-      <Paper sx={{ padding: 3, marginTop: 3 }}>
-        <Typography variant="h4" gutterBottom>
-          Trip Details
-        </Typography>
-        {trip ? (
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6">ID:</Typography>
-              <Typography variant="body1">{trip._id}</Typography>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6">Map ID:</Typography>
-              <Typography variant="body1">{trip.map_id}</Typography>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6">Order ID:</Typography>
-              <Typography variant="body1">{trip.order_id}</Typography>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6">Created At:</Typography>
-              <Typography variant="body1">
-                {new Date(trip.created_at).toLocaleString()}
+    <Grid sx={{ minWidth: "500px" }}>
+      <Timeline position="alternate">
+        {timelineData.map((checkpoint, index) => (
+          <TimelineItem key={index}>
+            <TimelineOppositeContent
+              sx={{ m: "auto 0" }}
+              align={index === 0 ? "right" : "left"}
+              variant="body2"
+              color="text.secondary"
+            >
+              {checkpoint.created_at !== "" ? checkpoint.created_at : ""}
+            </TimelineOppositeContent>
+            <TimelineSeparator>
+              {index !== 0 && <TimelineConnector />}
+              <TimelineDot
+                sx={{
+                  bgcolor:
+                    checkpoint.created_at === "" ? "grey.500" : "primary.main",
+                }}
+              >
+                {index === 0 ? (
+                  <StartIcon />
+                ) : index === timelineData.length - 1 ? (
+                  <FlagIcon />
+                ) : null}
+              </TimelineDot>
+              {index < timelineData.length - 1 && <TimelineConnector />}
+            </TimelineSeparator>
+            <TimelineContent sx={{ py: "12px", px: 2 }}>
+              <Typography variant="h6" component="span">
+                Checkpoint {checkpoint.checkpoint_id}
               </Typography>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6">Arrived at Destination:</Typography>
-              <Typography variant="body1">
-                {trip.arrived_at_destination ? "Yes" : "No"}
+              <Typography>
+                {index === 0
+                  ? "Start of the journey"
+                  : index === timelineData.length - 1
+                  ? "End of the journey"
+                  : "Intermediate checkpoint"}
               </Typography>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6">Average Offset:</Typography>
-              <Typography variant="body1">{trip.avg_offset}</Typography>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6">Starting Orientation:</Typography>
-              <Typography variant="body1">
-                {trip.starting_orientation}
-              </Typography>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6">Starting Point:</Typography>
-              <Typography variant="body1">{trip.starting_point}</Typography>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6">Destination Point:</Typography>
-              <Typography variant="body1">{trip.destination_point}</Typography>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6">Directions:</Typography>
-              <Typography variant="body1">
-                {trip.directions.length > 0
-                  ? trip.directions.join(", ")
-                  : "No directions"}
-              </Typography>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6">Path:</Typography>
-              <Typography variant="body1">
-                {trip.path.length > 0 ? trip.path.join(", ") : "No path"}
-              </Typography>
-            </Grid>
-          </Grid>
-        ) : (
-          <Typography variant="body1">No trip details available.</Typography>
-        )}
-      </Paper>
-    </Container>
+            </TimelineContent>
+          </TimelineItem>
+        ))}
+      </Timeline>
+    </Grid>
   );
 };
 
