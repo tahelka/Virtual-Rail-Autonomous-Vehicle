@@ -1,6 +1,5 @@
 import React from 'react';
 import { Typography } from '@mui/material';
-import StatsDisplay from '../../Components/StatsDisplay/StatsDisplay';
 
 const Statistics = () => {
   return (
@@ -9,7 +8,7 @@ const Statistics = () => {
         <Typography variant="h5" gutterBottom sx={{ marginBottom: "20px" }}>
           Trip Statistics
         </Typography>
-        <StatsDisplay />
+        {/**/}
       </div>
     </div>
   );
