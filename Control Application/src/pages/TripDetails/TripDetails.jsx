@@ -4,6 +4,7 @@ import axios from "axios";
 import { Grid, Typography, Card, CardContent } from "@mui/material";
 import io from "socket.io-client";
 import TimelineComponent from "../../Components/TimelineComponent/TimelineComponent";
+import StatsDisplay from '../../Components/StatsDisplay/RealTimeStatsDisplay';
 
 const socket = io("http://localhost:5000");
 
@@ -82,14 +83,13 @@ const TripDetails = () => {
       <Grid item xs={12}>
         <Card variant="outlined">
           <CardContent>
-            <Typography variant="body1">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus
-              lacinia odio vitae vestibulum vestibulum. Cras venenatis euismod
-              malesuada. Nulla facilisi. Morbi commodo odio nec interdum
-              blandit. Nam consequat, odio at scelerisque consectetur, justo
-              velit convallis nisl, nec laoreet felis nulla ut erat. Aliquam
-              erat volutpat.
+            <Typography variant="h5" component="div" gutterBottom>
+              Real Time Statistics
             </Typography>
+            <Typography variant="body1" color="text.secondary" paragraph>
+              Here you can watch real-time statistics about the vehicle’s performance and track its stability and *********
+            </Typography>
+            <StatsDisplay />
           </CardContent>
         </Card>
       </Grid>
