@@ -1,16 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-import { Grid, Typography } from "@mui/material";
-import Timeline from "@mui/lab/Timeline";
-import TimelineItem from "@mui/lab/TimelineItem";
-import TimelineSeparator from "@mui/lab/TimelineSeparator";
-import TimelineConnector from "@mui/lab/TimelineConnector";
-import TimelineContent from "@mui/lab/TimelineContent";
-import TimelineOppositeContent from "@mui/lab/TimelineOppositeContent";
-import TimelineDot from "@mui/lab/TimelineDot";
-import { Start as StartIcon, Flag as FlagIcon } from "@mui/icons-material";
+import { Grid, Typography, Card, CardContent } from "@mui/material";
 import io from "socket.io-client";
+import TimelineComponent from "../../Components/TimelineComponent/TimelineComponent";
 
 const socket = io("http://localhost:5000");
 
@@ -62,14 +55,6 @@ const TripDetails = () => {
     };
   }, [tripId]);
 
-  const formatTime = (dateString) => {
-    console.log(dateString);
-    const date = new Date(dateString);
-    return (
-      date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) ?? ""
-    );
-  };
-
   function mapPathToCreatedAt(tripData, checkpointsData) {
     if (!tripData || !checkpointsData) {
       return [];
@@ -89,49 +74,25 @@ const TripDetails = () => {
   const timelineData = mapPathToCreatedAt(tripData, checkpointsData);
 
   return (
-    <Grid sx={{ minWidth: "500px" }}>
-      <Timeline position="alternate">
-        {timelineData.map((checkpoint, index) => (
-          <TimelineItem key={index}>
-            <TimelineOppositeContent
-              sx={{ m: "auto 0" }}
-              align={index === 0 ? "right" : "left"}
-              variant="body2"
-              color="text.secondary"
-            >
-              {checkpoint.created_at !== "" ? checkpoint.created_at : ""}
-            </TimelineOppositeContent>
-            <TimelineSeparator>
-              {index !== 0 && <TimelineConnector />}
-              <TimelineDot
-                sx={{
-                  bgcolor:
-                    checkpoint.created_at === "" ? "grey.500" : "primary.main",
-                }}
-              >
-                {index === 0 ? (
-                  <StartIcon />
-                ) : index === timelineData.length - 1 ? (
-                  <FlagIcon />
-                ) : null}
-              </TimelineDot>
-              {index < timelineData.length - 1 && <TimelineConnector />}
-            </TimelineSeparator>
-            <TimelineContent sx={{ py: "12px", px: 2 }}>
-              <Typography variant="h6" component="span">
-                Checkpoint {checkpoint.checkpoint_id}
-              </Typography>
-              <Typography>
-                {index === 0
-                  ? "Start of the journey"
-                  : index === timelineData.length - 1
-                  ? "End of the journey"
-                  : "Intermediate checkpoint"}
-              </Typography>
-            </TimelineContent>
-          </TimelineItem>
-        ))}
-      </Timeline>
+    <Grid container spacing={3}>
+      <Grid item xs={12}>
+        <TimelineComponent timelineData={timelineData} />
+      </Grid>
+
+      <Grid item xs={12}>
+        <Card variant="outlined">
+          <CardContent>
+            <Typography variant="body1">
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus
+              lacinia odio vitae vestibulum vestibulum. Cras venenatis euismod
+              malesuada. Nulla facilisi. Morbi commodo odio nec interdum
+              blandit. Nam consequat, odio at scelerisque consectetur, justo
+              velit convallis nisl, nec laoreet felis nulla ut erat. Aliquam
+              erat volutpat.
+            </Typography>
+          </CardContent>
+        </Card>
+      </Grid>
     </Grid>
   );
 };

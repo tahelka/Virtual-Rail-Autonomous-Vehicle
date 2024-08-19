@@ -11,17 +11,32 @@ from flask import Flask, request, jsonify
 import math
 import requests
 import pyttsx3
+from datetime import datetime, timedelta
+import multiprocessing
+
+def speak(text):
+    process = multiprocessing.Process(target=_speak_process, args=(text,))
+    process.start()
+
+    # Wait for the process to complete or timeout after 15 seconds
+    process.join(timeout=15)
+    if process.is_alive():
+        process.terminate()  # Terminate the process if it's still running
+
+def _speak_process(text):
+    engine = pyttsx3.init()
+    engine.say(text)
+    engine.runAndWait()
 
 vehicle_module = Flask(__name__)
 is_busy = False
 kernel = np.ones((5, 5), np.uint8)
 stream_url = 'http://192.168.2.100:81/stream'
-cv2.namedWindow('settings', cv2.WINDOW_AUTOSIZE)
 bottom_percentage = 60 / 100
 # ESP32 server IP address and port
 esp32_ip = '192.168.2.100'
 esp32_port = '80'  # Assuming your ESP32 server is running on port 80
-global no_data_received_counter, path_data, orientation
+#global no_data_received_counter, path_data, orientation
 orientation = "north"  # Default orientation of the vehicle
 no_data_received_counter = 50  # Number of times to check for no data received before restarting the entire program
 URL_FOR_NEW_ROUTES = "http://localhost:5000/api/graph"
@@ -30,12 +45,6 @@ FRAMES_BEFORE_SAME_TURN = 5
 
 #speaking if have time
 # # Initialize the text-to-speech engine
-# engine = pyttsx3.init()
-
-# def speak(text):
-#     engine.say(text)
-#     engine.runAndWait()
-#     engine.stop()
 
 # Define constants for command names
 GO = "go"
@@ -59,9 +68,6 @@ CROSS_back = "crossBack"
 def update_value(x):
     pass
 
-cv2.createTrackbar('Threshold', 'settings', 80, 255, update_value)
-cv2.createTrackbar('Contrast', 'settings', 19, 20, update_value)
-cv2.createTrackbar('Cont_rad', 'settings', 95, 100, update_value)
 current_fps = 30  # Default FPS
 
 def set_fps(fps):
@@ -99,7 +105,7 @@ def setup_non_blocking_stream(url):
         print(f"Failed to set up non-blocking stream: {e}")
         return None
 
-def get_latest_frame_bytes(sock, buffer, chunk_size=65536, timeout=10, reconnection_attempts=3):
+def get_latest_frame_bytes(sock, buffer, chunk_size=65536):
     global no_data_received_counter
     latest_frame = None
 
@@ -333,14 +339,14 @@ def extract_path_data(json_data):
     # Create a dictionary where the key is the path number and the value is the direction
     path_from_marker_dict = {path[i]: directions[i] for i in range(len(path)-1)}
 
-    # Create a list of all numbers in the order they appear in the JSON
-    number_list = path
+    # Create a list of lists where each sublist contains a number the time (initially None) and average offset (initially None)
+    number_list_with_time = [[num, None, None] for num in path]
 
     print("Dictionary (path number to direction):")
     print(path_from_marker_dict)
 
     print("\nList of all numbers:")
-    print(number_list)
+    print(number_list_with_time)
 
     print("\nMap ID:")
     print(mapid)
@@ -354,7 +360,7 @@ def extract_path_data(json_data):
     print("\nTrip ID:")
     print(trip_id)
 
-    return path_from_marker_dict, number_list, mapid, orderid, orientation, trip_id
+    return path_from_marker_dict, number_list_with_time, mapid, orderid, orientation, trip_id
 
 def turn_direction(orientation, direction):
     if orientation == "north":
@@ -421,9 +427,9 @@ def send_request_to_server(params, server_endpoint, method):
     if method == "GET":
         response = requests.get(url, params=params)
     elif method == "POST":
-        response = requests.post(url, data=params)
+        response = requests.post(url, json=params)
     elif method == "PUT":
-        response = requests.put(url, data=params)
+        response = requests.put(url, json=params)
     elif method == "DELETE":
         response = requests.delete(url, params=params)
     else:
@@ -438,23 +444,86 @@ def send_request_to_server(params, server_endpoint, method):
         print(f"Request failed with status code {response.status_code}")
         return None
     
+def prepare_data_for_server(trip_id, marker_number, mapid, average_offset, number_list, numbers_list_idx, approximation):
+    number_list[numbers_list_idx][1] = datetime.now()
+    #time_to_send= number_list[numbers_list_idx][1].strftime("%H:%M:%S") if wont work need to fix
+    number_list[numbers_list_idx][2] = average_offset
+    params = {
+                "trip_id": trip_id,
+                "checkpoint_id": marker_number,
+                "map_id": mapid,
+                "average_offset": float(number_list[numbers_list_idx][2]),
+                "created_at":str(number_list[numbers_list_idx][1]),
+                "approximation": approximation
+            }
+    return params 
+
+def finish_sending_all_requests(trip_id,number_list,mapid):
+    minimum_offset = number_list[len(number_list) -1][2]
+    smallest_time = number_list[0][1]
+    if(smallest_time is None):
+        smallest_time = datetime.combine(datetime.today(), datetime.min.time()) #set to 0:00 if we have no first checkpoint start time
+    for i in range(len(number_list)-1):
+        if number_list[i+1][2] is not None:
+            if number_list[i+1][2] < minimum_offset:
+                minimum_offset = number_list[i+1][2]
+    counter = 0
+    i=1
+    found_end_of_gap = False
+    gap_list = []
+
+    while i < len(number_list):
+        counter = 0
+        while found_end_of_gap == False and i < len(number_list):
+            if number_list[i][1] is None:
+                counter+=1
+                gap_list.append(i)
+                i+=1
+            else:
+                found_end_of_gap = True
+        if counter > 0:
+            for j in range(len(gap_list)):
+                number_list[gap_list[j]][1] = smallest_time + (timedelta(seconds=(number_list[i][1] - smallest_time).total_seconds() / counter) * (j+1))
+                number_list[gap_list[j]][2] = minimum_offset
+                params = prepare_data_for_server(trip_id, int(number_list[gap_list[j]][0]), mapid, number_list[gap_list[j]][2], number_list, gap_list[j], True)
+                send_request_to_server(params, URL_FOR_CHECKPOINT_UPDATES, "POST")
+            gap_list.clear()
+            smallest_time = number_list[i][1]
+            found_end_of_gap = False
+        i+=1
+
+def check_if_skipped_checkpoint(marker_number, number_list, numbers_list_idx):
+    number = numbers_list_idx
+    found = False
+    while number < len(number_list) and found == False:
+        if number_list[number][0] == marker_number:
+            found = True
+            return found, number
+        number+=1
+
+    return found, number
+  
 def process_frames(sock, bytes):
     global orientation
     global path_data
     global is_busy
-    #frame_counter = 0  # Initialize a frame counter
-    #command_interval = 1  # Send command every 1 frames
+    cv2.namedWindow('settings', cv2.WINDOW_AUTOSIZE)
+    cv2.createTrackbar('Threshold', 'settings', 80, 255, update_value)
+    cv2.createTrackbar('Contrast', 'settings', 19, 20, update_value)
+    cv2.createTrackbar('Cont_rad', 'settings', 95, 100, update_value)
     send_commands = True  # Initialize the flag to True
     previous_marker = [-1]
     consecutive_left = 10   #counter for when its cosidered stuck on left turn- need to perform heavy left turn when 0
     consecutive_right = 10  #counter for when its cosidered stuck on right turn- need to perform heavy right turn when 0
     cruise_mode_counter = 7 #counter for when to start cruise mode
-    threshold_value, contrast_factor, contrast_radius = get_trackbar_values()
     path_from_marker_dict, number_list,mapid,orderid,orientation,trip_id = extract_path_data(path_data)
     numbers_list_idx = 0
     average_offset = 0
     frame_number = 0
+    frame_for_avg_offset = 0
+    frame_on_checkpoint_encounter = 0
     while True:
+        threshold_value, contrast_factor, contrast_radius = get_trackbar_values()
         jpg, bytes = get_latest_frame_bytes(sock, bytes) # Get the latest frame bytes
         frame = get_frame_from_bytes(jpg) # Get the frame from the bytes
         command_was_sent = False
@@ -470,38 +539,20 @@ def process_frames(sock, bytes):
                 else:
                     marker_detected = False
                 frame , offset ,foundContour = find_and_draw_contours(frame, binary_thresh, orientation, marker_detected)
-                #frame_counter += 1  # Increment the frame counter
                 command_sent = None  # Initialize the command sent to None
                 if marker_detected:
-                        #finished current path
-                    params = {
-                        "trip_id": trip_id,
-                        "checkpoint_id": id_of_marker[0][0],
-                        "map_id": mapid,
-                        "average_offset": average_offset
-                    }
-                    if id_of_marker[0][0] == number_list[len(number_list) - 1]:
-                        command_sent = send_command(STOP)
-                        print("finished delivery - awaiting new orders...")
-                        #update server when trip is finished
-                        send_request_to_server(params, URL_FOR_CHECKPOINT_UPDATES, "POST")
-                        #speak("Finished delivery - awaiting new orders...")
-                        break
-                    if id_of_marker[0][0] == number_list[numbers_list_idx]:
-                        command_sent = calculate_direction_acording_to_orientation(orientation, id_of_marker[0][0], path_from_marker_dict)
-                        #update server when checkpoint is reached
-                        frame_on_checkpoint_encounter = frame_number
-                        send_request_to_server(params, URL_FOR_CHECKPOINT_UPDATES, "POST")
-                        numbers_list_idx += 1
-                    elif id_of_marker[0][0] == previous_marker[0] and (frame_number > frame_on_checkpoint_encounter + FRAMES_BEFORE_SAME_TURN or previous_command == CROSS):
-                        command_sent = previous_command
-                    elif id_of_marker[0][0] != number_list[numbers_list_idx] and id_of_marker[0][0] != previous_marker[0]:
-                        # if the vehicle made a wrong turn request new route from server
-                        command_sent = send_command(STOP)
-                        print("wrong turn - Requesting new route from server...")
-                        #speak("Wrong turn - Requesting new route from server...")
-                        is_busy = False
-                        params = {
+                    send_command(STOP)
+                    if id_of_marker[0][0] != number_list[numbers_list_idx][0] and id_of_marker[0][0] != previous_marker[0]:
+                        skipped,number= check_if_skipped_checkpoint(id_of_marker[0][0], number_list, numbers_list_idx)
+                        if skipped == True:
+                            numbers_list_idx = number
+                            print("skipped checkpoint")
+                            speak("Skipped checkpoint")
+                        else:
+                            print("wrong turn - Requesting new route from server...")
+                            speak("Wrong turn - Requesting new route from server...")
+                            is_busy = False
+                            params = {
                                 "mapid": mapid,
                                 "start": id_of_marker[0][0],
                                 "target": number_list[len(number_list) - 1],
@@ -509,23 +560,39 @@ def process_frames(sock, bytes):
                                 "orderid": orderid,
                                 "reroute": True
                                 }
-                        path_data = send_request_to_server(params, URL_FOR_NEW_ROUTES, "GET")
-                        path_from_marker_dict, number_list, mapid, orderid, orientation, trip_id = extract_path_data(path_data)
-                        print("new route received- procceding...")
-                        #speak("New route received - proceeding...")
-                        numbers_list_idx = 0
-                        is_busy = True
-                        continue
+                            path_data = send_request_to_server(params, URL_FOR_NEW_ROUTES, "GET")
+                            path_from_marker_dict, number_list, mapid, orderid, orientation, trip_id = extract_path_data(path_data)
+                            print("new route received- procceding...")
+                            speak("New route received - proceeding...")
+                            numbers_list_idx = 0
+                            is_busy = True
+                            continue
+                        #finished current path
+                    if id_of_marker[0][0] == number_list[len(number_list) - 1][0]:
+                        command_sent = send_command(STOP)
+                        print("finished delivery - awaiting new orders...")
+                        #update server when trip is finished
+                        params = prepare_data_for_server(trip_id ,int(id_of_marker[0][0]), mapid ,float(average_offset), number_list, numbers_list_idx, False)
+                        send_request_to_server(params, URL_FOR_CHECKPOINT_UPDATES, "POST")
+                        finish_sending_all_requests(trip_id,number_list,mapid)
+                        speak("Finished delivery - awaiting new orders...")
+                        break
+                    elif id_of_marker[0][0] == number_list[numbers_list_idx][0]:
+                        command_sent = calculate_direction_acording_to_orientation(orientation, id_of_marker[0][0], path_from_marker_dict)
+                        #update server when checkpoint is reached
+                        previous_command = command_sent
+                        frame_on_checkpoint_encounter = frame_number
+                        params = prepare_data_for_server(trip_id ,int(id_of_marker[0][0]), mapid ,float(average_offset), number_list, numbers_list_idx, False)
+                        send_request_to_server(params, URL_FOR_CHECKPOINT_UPDATES, "POST")
+                        numbers_list_idx += 1
+                    elif id_of_marker[0][0] == previous_marker[0] and (frame_number > (frame_on_checkpoint_encounter + FRAMES_BEFORE_SAME_TURN) or previous_command == CROSS):
+                        command_sent = previous_command
+                        frame_on_checkpoint_encounter = frame_number
 
-                    # Check if the current marker is the same as the previous marker
-                    #if previous_marker == id_of_marker[0] and command_sent is not CROSS:
-                    # If it is, do not send the command
-                        #command_sent = None
                     if send_commands == True:
                         # If it is not, send the command
                         send_command(command_sent)
                         previous_marker = id_of_marker[0]
-                        previous_command = command_sent
                     
                     if command_sent is not None:
                         command_was_sent = True
@@ -533,10 +600,10 @@ def process_frames(sock, bytes):
                     consecutive_left = 10
                     consecutive_right = 10
                     cruise_mode_counter = 7
-                #if frame_counter == command_interval and (marker_detected == False or command_was_sent == False):  # If the counter reaches the command interval
                 if marker_detected == False or command_was_sent == False:  # if no marker detected or no command was sent
                     #previous_marker = [-1]  # Reset the previous marker
-                    average_offset = (average_offset + abs(offset)) / frame_number   # Calculate the average offset only when no marker is detected
+                    frame_for_avg_offset+=1
+                    average_offset = (average_offset + abs(offset)) / frame_for_avg_offset   # Calculate the average offset only when no marker is detected
                     if send_commands:  # Only send commands if the flag is True
                         if foundContour == True:
                             if offset < -50:
@@ -567,8 +634,6 @@ def process_frames(sock, bytes):
                     else:  #emergency stop
                         command_sent = send_command(STOP)
                     command_was_sent = True
-                # if frame_counter >= command_interval:
-                #     frame_counter = 0
                 if consecutive_left == 0:   # if stuck on left turn perform strong left turn
                     send_command(HEAVY_LEFT)
                     consecutive_left = 10
@@ -583,6 +648,8 @@ def process_frames(sock, bytes):
                     break
                 elif key == ord('d'):  # If the "d" key is pressed, toggle the flag
                     send_commands = not send_commands
+                    
+    cv2.destroyAllWindows()
 
 def main():
     global is_busy
@@ -620,4 +687,4 @@ def process_path():
         return jsonify({"error": "Invalid request format"}), 400
 
 if __name__ == '__main__':
-    vehicle_module.run(debug=True, port=5001)  # Run the Flask app on port 5001
+    vehicle_module.run(debug=False, port=5001)  # Run the Flask app on port 5001
