@@ -55,8 +55,8 @@ const OffsetChart = ({ data, viewWindow = 6 }) => { // Default to 6
       },
       y: {
         title: { display: true, text: 'Offset' },
-        suggestedMin: -100,
-        suggestedMax: 100,
+        suggestedMin: 0,
+        suggestedMax: 5,
       }
     },
     animation: { duration: 0 },

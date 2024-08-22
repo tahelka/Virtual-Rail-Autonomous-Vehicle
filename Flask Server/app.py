@@ -418,7 +418,7 @@ def handle_trip_started():
 #             'type': 'end',
 #             'message': 'Real-time data ended and history saved',
 #             'tripId': trip_id
-#         })
+#         }) 
 
 
 @socketio.on('load')

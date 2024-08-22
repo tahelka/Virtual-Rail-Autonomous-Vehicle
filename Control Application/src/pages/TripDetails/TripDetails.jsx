@@ -89,7 +89,7 @@ const TripDetails = () => {
             <Typography variant="body1" color="text.secondary" paragraph>
               Here you can watch real-time statistics about the vehicle’s performance and track its stability and *********
             </Typography>
-            <StatsDisplay />
+            <StatsDisplay checkpointsData={checkpointsData}/>
           </CardContent>
         </Card>
       </Grid>
