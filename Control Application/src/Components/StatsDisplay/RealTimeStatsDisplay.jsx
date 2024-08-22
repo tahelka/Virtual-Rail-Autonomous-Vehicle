@@ -3,23 +3,27 @@ import { Typography, Button, Snackbar, Alert, Box, Grid } from '@mui/material';
 import OffsetChart from './OffsetChart';
 
 const RealTimeStatsDisplay = ({ checkpointsData }) => {
-  // Initialize without a default zero value
   const [offsetData, setOffsetData] = useState([]);
   const [viewWindow, setViewWindow] = useState(10);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
-  useEffect(() => {
-    // Update offset data based on checkpointsData
-    const newOffsetData = checkpointsData.map((checkpoint) => ({
-      time: checkpoint.created_at,
-      value: checkpoint.avg_offset,
-    }));
+  const dataMapRef = React.useRef(new Map());
 
-    setOffsetData((prevData) => [
-      ...prevData,
-      ...newOffsetData
-    ].slice(-100));
-    
+  useEffect(() => {
+    // Process and add new checkpoints to offsetData
+    const newOffsetData = checkpointsData.reduce((acc, checkpoint) => {
+      if (!dataMapRef.current.has(checkpoint.created_at)) {
+        const newDataPoint = {
+          time: checkpoint.created_at,
+          value: checkpoint.avg_offset,
+        };
+        dataMapRef.current.set(checkpoint.created_at, newDataPoint);
+        acc.push(newDataPoint);
+      }
+      return acc;
+    }, []);
+
+    setOffsetData((prevData) => [...prevData, ...newOffsetData].slice(-100));
   }, [checkpointsData]);
 
   const handleZoom = (direction) => {
