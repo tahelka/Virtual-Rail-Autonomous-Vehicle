@@ -3,6 +3,7 @@ import { Typography, Button, Snackbar, Alert, Box, Grid } from '@mui/material';
 import OffsetChart from './OffsetChart';
 
 const RealTimeStatsDisplay = ({ checkpointsData }) => {
+  // Initialize without a default zero value
   const [offsetData, setOffsetData] = useState([]);
   const [viewWindow, setViewWindow] = useState(10);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
@@ -16,10 +17,7 @@ const RealTimeStatsDisplay = ({ checkpointsData }) => {
 
     setOffsetData((prevData) => [
       ...prevData,
-      ...checkpointsData.map((checkpoint) => ({
-        time: checkpoint.created_at,
-        value: checkpoint.avg_offset,
-      }))
+      ...newOffsetData
     ].slice(-100));
     
   }, [checkpointsData]);

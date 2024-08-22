@@ -25,21 +25,26 @@ ChartJS.register(
 );
 
 const OffsetChart = ({ data, viewWindow = 6 }) => { // Default to 6
-  const createChartData = (data) => ({
-    labels: data.slice(-viewWindow).map(d => d.time),
-    datasets: [
-      {
-        label: 'Average Offset',
-        data: data.slice(-viewWindow).map(d => d.value),
-        borderColor: 'rgb(75, 192, 192)',
-        backgroundColor: 'rgba(75, 192, 192, 0.5)',
-        fill: true,
-        tension: 0.4,
-        pointRadius: 3,
-        pointHoverRadius: 5,
-      }
-    ]
-  });
+  const createChartData = (data) => {
+    // Prepend a zero value to the data for the initial point
+    const extendedData = [{ time: 'Start', value: 0 }, ...data.slice(-viewWindow)];
+
+    return {
+      labels: extendedData.map(d => d.time),
+      datasets: [
+        {
+          label: 'Average Offset',
+          data: extendedData.map(d => d.value),
+          borderColor: 'rgb(75, 192, 192)',
+          backgroundColor: 'rgba(75, 192, 192, 0.5)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+        }
+      ]
+    };
+  };
 
   const options = {
     responsive: false, // Disable responsive resizing
@@ -65,14 +70,12 @@ const OffsetChart = ({ data, viewWindow = 6 }) => { // Default to 6
 
   return (
     <Box sx={{ height: '400px', width: '500px' }}> {/* Set fixed dimensions */}
-      {data.length > 0 && (
-        <Line 
-          data={createChartData(data)} 
-          options={options} 
-          width={500} // Set canvas width
-          height={400} // Set canvas height
-        />
-      )}
+      <Line 
+        data={createChartData(data)} 
+        options={options} 
+        width={500} // Set canvas width
+        height={400} // Set canvas height
+      />
     </Box>
   );
 };
