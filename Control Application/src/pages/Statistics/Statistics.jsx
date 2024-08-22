@@ -1,6 +1,6 @@
 import React from 'react';
 import { Typography } from '@mui/material';
-
+import WorstOffsetChart from '../../Components/StatsDisplay/WorstOffsetChart';
 const Statistics = () => {
   return (
     <div className="w-full min-w-[320px] overflow-x-auto">
@@ -8,9 +8,12 @@ const Statistics = () => {
         <Typography variant="h5" gutterBottom sx={{ marginBottom: "20px" }}>
           Trip Statistics
         </Typography>
-        {/**/}
+        <WorstOffsetChart></WorstOffsetChart>    
+
+
       </div>
     </div>
+    
   );
 };
 

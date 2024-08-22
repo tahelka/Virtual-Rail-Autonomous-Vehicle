@@ -350,100 +350,28 @@ def handle_connect():
 def handle_disconnect():
     print('Client disconnected')
 
-# get dummy data for stats
-@socketio.on('trip_started')
-def handle_trip_started():
-    global history
-    history = []
-    start_time = time.time()
-    trip_id = str(uuid.uuid4())
 
-    while time.time() - start_time < 15:
-        avg_offset = random.uniform(-100, 100)
-        speed = random.uniform(20, 120)
-        data = {
-            'avg_offset': avg_offset,
-            'speed': speed,
-            'timestamp': time.time()
-        }
-        history.append(data)
-        socketio.emit('data', {"type": "data", "payload": data})
-        socketio.sleep(1)
+@app.route('/api/trips/arrived/<trip_id>', methods=['POST'])
+def update_trip_arrival(trip_id):
+    # Mark the trip as arrived at the destination
+    result = trips_collection.update_one(
+        {'_id': ObjectId(trip_id)},
+        {'$set': {'arrived_at_destination': True}}
+    )
 
-    history_document = {
-        'trip_id': trip_id,
-        'history': history,
-        'created_at': datetime.utcnow()
-    }
-    db['history'].insert_one(history_document)
-    logging.info(f"History automatically saved in MongoDB for trip ID: {trip_id}")
-    socketio.emit('end', {
-        'type': "end",
-        'message': "Real-time data ended and history saved",
-        'tripId': trip_id
-    })
-
-# get data from the car
-# @socketio.on('trip_started')
-# def handle_trip_started(data):
-#     global history
-#     if 'history' not in globals():
-#         history = []
-
-#     trip_id = data.get('trip_id')
-#     avg_offset = data.get('avg_offset')
-#     speed = data.get('avg_speed')
-#     timestamp = data.get('curr_time')
-
-#     entry = {
-#         'avg_offset': avg_offset,
-#         'speed': speed,
-#         'timestamp': timestamp
-#     }
-#     history.append(entry)
-#     socketio.emit('data', {'type': 'data', 'payload': entry})
-
-#     history_document = {
-#         'trip_id': trip_id,
-#         'history': history,
-#         'created_at': datetime.utcnow()
-#     }
-#     db['history'].insert_one(history_document)
-#     logging.info(f'History automatically saved in MongoDB for trip ID: {trip_id}')
-
-#     # Check if the trip has arrived at the destination
-#     trip_info = db['trips'].find_one({'_id': trip_id})
-#     if trip_info and trip_info.get('arrived_at_destination', False):
-#         socketio.emit('end', {
-#             'type': 'end',
-#             'message': 'Real-time data ended and history saved',
-#             'tripId': trip_id
-#         })
-
-
-@socketio.on('load')
-def handle_load(data):
-    trip_id = data['tripId']
-    
-    # Retrieve the history of a specific trip from MongoDB
-    history_document = db['history'].find_one({"trip_id": trip_id})
-    
-    if history_document:
-        loaded_history = history_document['history']
-        socketio.emit('load', {"type": "load", "payload": loaded_history})
-        logging.info(f"History loaded and sent to client from MongoDB: {trip_id}")
+    if result.modified_count > 0:
+        trip = trips_collection.find_one({'_id': ObjectId(trip_id)})
+        worst_offset = calculate_worst_offset(trip['_id'])  # Replace with your method to calculate worst offset
+        socketio.emit('arrived_at_destination', {'trip_id': str(trip['_id']), 'worst_offset': worst_offset})
+        return jsonify({'message': 'Trip updated successfully, vehicle has arrived at the destination'}), 200
     else:
-        socketio.emit('load', {"type": "load", "message": "No history found"})
-        logging.warning(f"No history found in MongoDB for trip ID: {trip_id}")
+        return jsonify({'error': 'Trip not found or already marked as arrived'}), 404
 
-@socketio.on('list_histories')
-def handle_list_histories():
-    # Retrieve list of trip IDs from MongoDB
-    history_documents = db['history'].find({}, {"trip_id": 1})
-    history_files = [doc['trip_id'] for doc in history_documents]
-    
-    socketio.emit('history_list', {"type": "history_list", "payload": history_files})
-    logging.info("Sent list of history records to client from MongoDB")
+def calculate_worst_offset(trip_id):
+    # Calculate and return the worst average offset for the given trip
+    checkpoints = vehicle_checkpoints_collection.find({'trip_id': str(trip_id)})
+    worst_offset = max(checkpoint['avg_offset'] for checkpoint in checkpoints)
+    return worst_offset
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
