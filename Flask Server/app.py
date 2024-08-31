@@ -331,6 +331,7 @@ def list_maps():
                 "data": map_data,
                 "creation_time": formatted_creation_time
             })
+
         
         # Sort maps by creation time
         maps.sort(key=lambda x: x['creation_time'])
@@ -340,7 +341,6 @@ def list_maps():
         return jsonify({"error": str(e)}), 400
 
 
-###
 # Socket.IO event handlers
 @socketio.on('connect')
 def handle_connect():
@@ -350,27 +350,39 @@ def handle_connect():
 def handle_disconnect():
     print('Client disconnected')
 
+###
 
-@app.route('/api/trips/arrived/<trip_id>', methods=['POST'])
-def update_trip_arrival(trip_id):
-    # Mark the trip as arrived at the destination
-    result = trips_collection.update_one(
-        {'_id': ObjectId(trip_id)},
-        {'$set': {'arrived_at_destination': True}}
-    )
+@app.route('/api/trips/worst_offsets', methods=['GET'])
+def get_all_worst_offsets():
+    try:
+        # Retrieve all trips
+        trips = list(trips_collection.find())  # Convert to list for easier debugging
+        
+        # Retrieve all trips, regardless of whether they have arrived at their destination
+        #trips = list(trips_collection.find({'arrived_at_destination': True})) # Convert to list for easier debugging
+        
+        print(f"Number of trips found: {len(trips)}")  # Debug log
 
-    if result.modified_count > 0:
-        trip = trips_collection.find_one({'_id': ObjectId(trip_id)})
-        worst_offset = calculate_worst_offset(trip['_id'])  # Replace with your method to calculate worst offset
-        socketio.emit('arrived_at_destination', {'trip_id': str(trip['_id']), 'worst_offset': worst_offset})
-        return jsonify({'message': 'Trip updated successfully, vehicle has arrived at the destination'}), 200
-    else:
-        return jsonify({'error': 'Trip not found or already marked as arrived'}), 404
+        worst_offsets = []
+        
+        for trip in trips:
+            trip_id = str(trip['_id'])
+            worst_offset = calculate_worst_offset(trip_id)
+            worst_offsets.append({
+                'trip_id': trip_id,
+                'worst_offset': worst_offset
+            })
+            # print(f"Processed trip {trip_id} with worst offset {worst_offset}")  # Debug log
+        
+        return jsonify(worst_offsets), 200
+    except Exception as e:
+        print(f"Error in get_all_worst_offsets: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
 
 def calculate_worst_offset(trip_id):
     # Calculate and return the worst average offset for the given trip
-    checkpoints = vehicle_checkpoints_collection.find({'trip_id': str(trip_id)})
-    worst_offset = max(checkpoint['avg_offset'] for checkpoint in checkpoints)
+    checkpoints = vehicle_checkpoints_collection.find({'trip_id': trip_id})
+    worst_offset = max((checkpoint.get('avg_offset', 0) for checkpoint in checkpoints), default=0)
     return worst_offset
 
 if __name__ == '__main__':
