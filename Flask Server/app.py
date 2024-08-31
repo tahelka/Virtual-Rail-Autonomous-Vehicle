@@ -330,8 +330,8 @@ def list_maps():
                 "id": map_id,
                 "data": map_data,
                 "creation_time": formatted_creation_time
-            }) 
-            
+            })
+
         
         # Sort maps by creation time
         maps.sort(key=lambda x: x['creation_time'])
