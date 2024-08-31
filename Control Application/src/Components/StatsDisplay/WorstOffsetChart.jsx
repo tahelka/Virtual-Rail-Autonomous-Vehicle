@@ -1,33 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Line } from 'react-chartjs-2';
 import { Box, Button } from '@mui/material';
-import io from 'socket.io-client';
 
-const socket = io("http://localhost:5000");
-
-const WorstOffsetChart = () => {
-  const [worstOffsets, setWorstOffsets] = useState([]);
+const WorstOffsetChart = ({ worstOffsets }) => {
   const [viewWindow, setViewWindow] = useState(10); // Default to showing 10 trips at a time
 
-  useEffect(() => {
-    // Listen for the 'arrived_at_destination' event to get the worst offset of each trip
-    socket.on('arrived_at_destination', (data) => {
-      const { trip_id, worst_offset } = data;
-      setWorstOffsets((prevOffsets) => [
-        ...prevOffsets,
-        { trip_id, worst_offset }
-      ]);
-    });
-
-    // Clean up the socket connection when the component unmounts
-    return () => {
-      socket.off('arrived_at_destination');
-    };
-  }, []);
-
-  // Create chart data
   const createChartData = () => {
     const visibleData = worstOffsets.slice(-viewWindow); // Show only the last `viewWindow` number of trips
+    
     return {
       labels: visibleData.map(offset => offset.trip_id),
       datasets: [
@@ -58,7 +38,11 @@ const WorstOffsetChart = () => {
       },
       y: {
         title: { display: true, text: 'Worst Offset' },
-        suggestedMin: 0,
+        min: 0,
+        suggestedMax: 7,  
+        ticks: {
+          stepSize: 1,  
+        },
       }
     },
     animation: { duration: 0 },
