@@ -1,28 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Grid, Typography, Card, CardContent } from "@mui/material";
+import { Grid, Typography } from "@mui/material";
 import WorstOffsetChart from '../../Components/StatsDisplay/WorstOffsetChart';
 import axios from 'axios';
 
 const Statistics = () => {
-  const [worstOffsets, setWorstOffsets] = useState([]);
+  const [telemetryData, setTelemetryData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchWorstOffsets = async () => {
+  const fetchTelemetryData = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/trips/worst_offsets');
-      setWorstOffsets(response.data);
-      console.log("Fetched worst offsets for all trips:", response.data);
+      const response = await axios.get('http://localhost:5000/api/trips/telemetry');
+      setTelemetryData(response.data);
+      console.log("Fetched telemetry data for all trips:", response.data);
     } catch (error) {
-      console.error("Error fetching worst offsets:", error);
-      setError('Error fetching worst offsets.');
+      console.error("Error fetching telemetry data:", error);
+      setError('Error fetching telemetry data.');
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchWorstOffsets();
+    fetchTelemetryData();
   }, []);
 
   if (isLoading) return <span>Loading...</span>;
@@ -35,7 +35,7 @@ const Statistics = () => {
           Trip Statistics
         </Typography>
         <Grid item xs={12}>
-          <WorstOffsetChart worstOffsets={worstOffsets} />   
+          <WorstOffsetChart worstOffsets={telemetryData} />   
         </Grid> 
       </div>
     </div>
