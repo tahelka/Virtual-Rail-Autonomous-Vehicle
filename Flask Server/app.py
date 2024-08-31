@@ -352,38 +352,94 @@ def handle_disconnect():
 
 ###
 
-@app.route('/api/trips/worst_offsets', methods=['GET'])
-def get_all_worst_offsets():
+# @app.route('/api/trips/worst_offsets', methods=['GET'])
+# def get_all_worst_offsets():
+#     try:
+#         # Retrieve all trips
+#         trips = list(trips_collection.find())  # Convert to list for easier debugging
+        
+#         # Retrieve all trips, regardless of whether they have arrived at their destination
+#         #trips = list(trips_collection.find({'arrived_at_destination': True})) # Convert to list for easier debugging
+        
+#         print(f"Number of trips found: {len(trips)}")  # Debug log
+
+#         worst_offsets = []
+        
+#         for trip in trips:
+#             trip_id = str(trip['_id'])
+#             worst_offset = calculate_worst_offset(trip_id)
+#             worst_offsets.append({
+#                 'trip_id': trip_id,
+#                 'worst_offset': worst_offset
+#             })
+#             # print(f"Processed trip {trip_id} with worst offset {worst_offset}")  # Debug log
+        
+#         return jsonify(worst_offsets), 200
+#     except Exception as e:
+#         print(f"Error in get_all_worst_offsets: {str(e)}")
+#         return jsonify({"error": "Internal server error"}), 500
+
+# def calculate_worst_offset(trip_id):
+#     # Calculate and return the worst average offset for the given trip
+#     checkpoints = vehicle_checkpoints_collection.find({'trip_id': trip_id})
+#     worst_offset = max((checkpoint.get('avg_offset', 0) for checkpoint in checkpoints), default=0)
+#     return worst_offset
+
+@app.route('/api/trips/telemetry', methods=['GET'])
+def get_all_trip_telemetry():
     try:
-        # Retrieve all trips
+        # Retrieve all trips 
         trips = list(trips_collection.find())  # Convert to list for easier debugging
         
-        # Retrieve all trips, regardless of whether they have arrived at their destination
-        #trips = list(trips_collection.find({'arrived_at_destination': True})) # Convert to list for easier debugging
-        
-        print(f"Number of trips found: {len(trips)}")  # Debug log
+        print(f"Number of trips found: {len(trips)}")
 
-        worst_offsets = []
+        telemetry_data = []
         
+        numbers_of_trips_arrived_to_destination = 0
+
         for trip in trips:
-            trip_id = str(trip['_id'])
-            worst_offset = calculate_worst_offset(trip_id)
-            worst_offsets.append({
-                'trip_id': trip_id,
-                'worst_offset': worst_offset
-            })
-            # print(f"Processed trip {trip_id} with worst offset {worst_offset}")  # Debug log
-        
-        return jsonify(worst_offsets), 200
+            try:
+                trip_id = str(trip['_id'])
+
+                worst_offset = calculate_worst_offset(trip_id)
+
+                numbers_of_trips_arrived_to_destination += is_trip_arrived_to_destination(trip_id)
+                
+                # Construct the telemetry data
+                telemetry = {
+                    'trip_id': trip_id,
+                    'worst_offset': worst_offset,
+                    'numbers_of_trips_arrived_to_destination': numbers_of_trips_arrived_to_destination,
+                }
+                
+                telemetry_data.append(telemetry)
+            
+            except Exception as inner_e:
+                print(f"Error processing trip ID {trip_id}: {str(inner_e)}")  # Debug log for individual trip failure
+
+        return jsonify(telemetry_data), 200
+
     except Exception as e:
-        print(f"Error in get_all_worst_offsets: {str(e)}")
-        return jsonify({"error": "Internal server error"}), 500
+        print(f"Error in get_all_trip_telemetry: {str(e)}")
+        return jsonify({"error": "Internal server error", "details": str(e)}), 500
 
 def calculate_worst_offset(trip_id):
-    # Calculate and return the worst average offset for the given trip
-    checkpoints = vehicle_checkpoints_collection.find({'trip_id': trip_id})
-    worst_offset = max((checkpoint.get('avg_offset', 0) for checkpoint in checkpoints), default=0)
-    return worst_offset
+    try:
+        checkpoints = vehicle_checkpoints_collection.find({'trip_id': trip_id})
+        worst_offset = max((checkpoint.get('avg_offset', 0) for checkpoint in checkpoints), default=0)
+        return worst_offset
+    except Exception as e:
+        print(f"Error calculating worst offset for trip ID {trip_id}: {str(e)}")
+        return 0
+
+def is_trip_arrived_to_destination(trip_id):
+    try:
+        trip = trips_collection.find_one({'_id': trip_id, 'arrived_at_destination': True})
+        arrived = 1 if trip else 0
+        return arrived
+    except Exception as e:
+        print(f"Error checking arrival status for trip ID {trip_id}: {str(e)}")
+        return 0
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
