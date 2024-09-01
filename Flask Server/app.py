@@ -389,27 +389,28 @@ def handle_disconnect():
 def get_all_trip_telemetry():
     try:
         # Retrieve all trips 
-        trips = list(trips_collection.find())  # Convert to list for easier debugging
+        #trips = list(trips_collection.find())  # Convert to list for easier debugging
+
+        trips = list(trips_collection.find().sort('created_at', -1).limit(3)) # Convert to list for easier debugging
+
         
         print(f"Number of trips found: {len(trips)}")
 
         telemetry_data = []
         
-        numbers_of_trips_arrived_to_destination = 0
-
         for trip in trips:
             try:
                 trip_id = str(trip['_id'])
 
                 worst_offset = calculate_worst_offset(trip_id)
 
-                numbers_of_trips_arrived_to_destination += is_trip_arrived_to_destination(trip_id)
+                arrived_to_destination = is_trip_arrived_to_destination(trip_id)
                 
                 # Construct the telemetry data
                 telemetry = {
                     'trip_id': trip_id,
                     'worst_offset': worst_offset,
-                    'numbers_of_trips_arrived_to_destination': numbers_of_trips_arrived_to_destination,
+                    'arrived_to_destination': arrived_to_destination,
                 }
                 
                 telemetry_data.append(telemetry)
@@ -435,11 +436,10 @@ def calculate_worst_offset(trip_id):
 def is_trip_arrived_to_destination(trip_id):
     try:
         trip = trips_collection.find_one({'_id': trip_id, 'arrived_at_destination': True})
-        arrived = 1 if trip else 0
-        return arrived
+        return bool(trip)  # Return True if the trip is found, otherwise False
     except Exception as e:
         print(f"Error checking arrival status for trip ID {trip_id}: {str(e)}")
-        return 0
+        return False
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
