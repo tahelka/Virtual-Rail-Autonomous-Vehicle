@@ -13,6 +13,7 @@ from pymongo import MongoClient
 from datetime import datetime
 from bson import ObjectId
 from bson.json_util import dumps
+from bson import ObjectId
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -435,6 +436,7 @@ def calculate_worst_offset(trip_id):
 
 def is_trip_arrived_to_destination(trip_id):
     try:
+        trip_id = ObjectId(trip_id)
         trip = trips_collection.find_one({'_id': trip_id, 'arrived_at_destination': True})
         return bool(trip)  # Return True if the trip is found, otherwise False
     except Exception as e:
