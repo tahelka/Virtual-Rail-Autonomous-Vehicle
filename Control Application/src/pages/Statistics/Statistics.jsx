@@ -63,23 +63,21 @@ const Statistics = () => {
   const numbersOfTripsArrived = telemetryData.filter(data => data.arrived_to_destination).length;
 
   return (
-    <div className="w-full min-w-[320px] overflow-x-auto">
-      <div className="max-w-7xl mx-auto px-4">
-        <Grid container spacing={8}>
-          <Grid item xs={10}>
-            <Typography variant="body1" color="text.secondary" paragraph>
-              Displays the worst offset values of trips over time.
-            </Typography> 
-            <WorstOffsetChart worstOffsets={telemetryData.reverse()} />
-          </Grid>
-          <Grid item xs={10}>
-            <Typography variant="body1" color="text.secondary" paragraph>
-              Illustrates the number of vehicles that have arrived at their destination versus those that are still en route.
-            </Typography>
-            <ArrivedDestinationChart numbersOfTripsArrived={numbersOfTripsArrived} totalTrips={telemetryData.length} />
-          </Grid>
+    <div>
+      <Grid container spacing={8}>
+        <Grid item xs={10}>
+          <Typography variant="body1" color="text.secondary" paragraph>
+            Displays the worst offset values of trips over time.
+          </Typography> 
+          <WorstOffsetChart worstOffsets={telemetryData.reverse()} />
         </Grid>
-      </div>
+        <Grid item xs={10}>
+          <Typography variant="body1" color="text.secondary" paragraph>
+            Illustrates the number of vehicles that have arrived at their destination versus those that are still en route.
+          </Typography>
+          <ArrivedDestinationChart numbersOfTripsArrived={numbersOfTripsArrived} totalTrips={telemetryData.length} />
+        </Grid>
+      </Grid>
     </div>
   );
 };
