@@ -13,28 +13,65 @@ import requests
 import pyttsx3
 from datetime import datetime, timedelta
 import multiprocessing
-
+import threading
+import queue
+ 
+ 
+# Create a queue to hold the frames
+frame_queue = queue.Queue()
+ 
+# Create an event to signal the send_frames thread to stop
+stop_event = threading.Event()
+ 
+def send_frames():
+    while not stop_event.is_set():
+        try:
+            processed_frame, binary_thresh = frame_queue.get(timeout=1)
+        except queue.Empty:
+            continue
+        if processed_frame is None and binary_thresh is None:
+            break
+        _, buffer1 = cv2.imencode('.jpg', processed_frame)
+        jpg_as_text1 = buffer1.tobytes()
+ 
+        _, buffer2 = cv2.imencode('.jpg', binary_thresh)
+        jpg_as_text2 = buffer2.tobytes()
+ 
+        try:
+            requests.post('http://localhost:5001/Video', files={'processed_frame': jpg_as_text1, 'binary_thresh': jpg_as_text2})
+        except Exception as e:
+            print(f"Error sending frames: {e}")
+        frame_queue.task_done()
+ 
+def start_send_frames_thread():
+    stop_event.clear()
+    threading.Thread(target=send_frames, daemon=True).start()
+ 
+def stop_send_frames_thread():
+    stop_event.set()
+    frame_queue.put((None, None))  # Ensure the send_frames thread exits
+ 
 def speak(text):
     process = multiprocessing.Process(target=_speak_process, args=(text,))
     process.start()
-
+ 
     # Wait for the process to complete or timeout after 15 seconds
     process.join(timeout=15)
     if process.is_alive():
         process.terminate()  # Terminate the process if it's still running
-
+ 
 def _speak_process(text):
     engine = pyttsx3.init()
     engine.say(text)
     engine.runAndWait()
-
+ 
 vehicle_module = Flask(__name__)
 is_busy = False
 kernel = np.ones((5, 5), np.uint8)
-stream_url = 'http://192.168.2.100:81/stream'
+stream_url = 'http://192.168.2.101:81/stream'
 bottom_percentage = 60 / 100
 # ESP32 server IP address and port
-esp32_ip = '192.168.2.100'
+esp32_ip = '192.168.2.101'
 esp32_port = '80'  # Assuming your ESP32 server is running on port 80
 #global no_data_received_counter, path_data, orientation
 orientation = "north"  # Default orientation of the vehicle
@@ -42,10 +79,10 @@ no_data_received_counter = 50  # Number of times to check for no data received b
 URL_FOR_NEW_ROUTES = "http://localhost:5000/api/graph"
 URL_FOR_CHECKPOINT_UPDATES = "http://localhost:5000/api/vehicle_checkpoints"
 FRAMES_BEFORE_SAME_TURN = 5
-
+ 
 #speaking if have time
 # # Initialize the text-to-speech engine
-
+ 
 # Define constants for command names
 GO = "go"
 CRUISE_GO = "cgo"
@@ -64,51 +101,51 @@ Right_back = "rightBack"
 TURN_LEFT_back = "TurnLeftBack"
 TURN_RIGHT_back = "TurnRightBack"
 CROSS_back = "crossBack"
-
+ 
 def update_value(x):
     pass
-
+ 
 current_fps = 30  # Default FPS
-
+ 
 def set_fps(fps):
     global current_fps, stream_url
     current_fps = fps
     stream_url = f'http://{esp32_ip}:81/stream?fps={current_fps}'
     print(f"Setting FPS to {current_fps} and stream URL to {stream_url}")
-
-
+ 
+ 
 def setup_non_blocking_stream(url):
     parsed_url = urllib.parse.urlparse(url)
     host = parsed_url.hostname
     port = parsed_url.port or 80
     path = parsed_url.path or '/'
-    
+ 
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setblocking(0)
         result = sock.connect_ex((host, port))
-        
+ 
         if result != 0 and result != errno.EINPROGRESS and result != errno.WSAEWOULDBLOCK:
             raise socket.error(f"Connection failed with error code {result}")
-        
+ 
         # Wait until the socket is writable
         while True:
             _, writable, _ = select.select([], [sock], [], 1)
             if writable:
                 break
-        
+ 
         request = f"GET {path} HTTP/1.1\r\nHost: {host}\r\n\r\n"
         sock.send(request.encode('utf-8'))
-        
+ 
         return sock
     except socket.error as e:
         print(f"Failed to set up non-blocking stream: {e}")
         return None
-
+ 
 def get_latest_frame_bytes(sock, buffer, chunk_size=65536):
     global no_data_received_counter
     latest_frame = None
-
+ 
     while True:
         ready = select.select([sock], [], [], 0.1)[0]
         if ready:
@@ -123,22 +160,22 @@ def get_latest_frame_bytes(sock, buffer, chunk_size=65536):
             except socket.error as e:
                 print(f"Socket error: {e}")
                 break
-
+ 
         if no_data_received_counter == 0:
             # Restart the entire program
             print("Restarting the program... no new data received for a long time")
             os.execv(sys.executable, ['python'] + sys.argv)
-          
+ 
         while True:
             start_marker = buffer.rfind(b'\xff\xd8')  # JPEG start of image
             end_marker = buffer.rfind(b'\xff\xd9')    # JPEG end of image
-
+ 
             # Continue searching for a valid start marker if the end marker is found before the start marker
             while start_marker != -1 and end_marker != -1 and start_marker > end_marker:
                 # Search for the next start marker before the current start_marker position
                 start_marker = buffer.rfind(b'\xff\xd8', 0, start_marker)
-            
-
+ 
+ 
             if start_marker != -1 and end_marker != -1 and start_marker < end_marker:
                  # Extract the complete frame
                 latest_frame = buffer[start_marker:end_marker + 2]
@@ -146,26 +183,26 @@ def get_latest_frame_bytes(sock, buffer, chunk_size=65536):
                 buffer = buffer[end_marker + 2:]
             else:
                 break
-
+ 
         return latest_frame, buffer
-
+ 
 def get_frame_from_bytes(jpg):
     if jpg:
         return cv2.imdecode(np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
     return None
-
+ 
 def get_trackbar_values():
     threshold_value = cv2.getTrackbarPos('Threshold', 'settings')
     contrast_factor = cv2.getTrackbarPos('Contrast', 'settings') / 10
     contrast_radius = cv2.getTrackbarPos('Cont_rad', 'settings') / 100
     return threshold_value, contrast_factor, contrast_radius
-
+ 
 def process_frame(frame):
     frame_height = frame.shape[0]
     start_height = int((1 - bottom_percentage) * frame_height)
     bottom_frame = frame[start_height:, :]
     return bottom_frame
-
+ 
 def draw_markers(frame, gray):
     global orientation
     aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
@@ -178,20 +215,20 @@ def draw_markers(frame, gray):
                                 [0, 600, 240],  # fy, cy
                                 [0, 0, 1]])
         dist_coeffs = np.zeros((5, 1))  # Assuming no distortion
-
+ 
         # Marker side length (in meters)
         marker_length = 0.04  # Replace with your marker length
-
+ 
         # Estimate pose of each marker
         rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(corners, marker_length, camera_matrix, dist_coeffs)
-
+ 
         # Process the first marker only
         if len(rvecs) > 0:
             rvec = rvecs[0]
             tvec = tvecs[0]
             # Convert rotation vector to Euler angles
             yaw = rotation_vector_to_euler_angles(rvec)
-
+ 
             # Determine viewing direction based on yaw
             if -45 < math.degrees(yaw) < 45:
                 orientation = "north"
@@ -201,12 +238,12 @@ def draw_markers(frame, gray):
                 orientation = "east"
             else:
                 orientation = "south"
-
+ 
             #print(f"Yaw: {math.degrees(yaw):.2f} degrees")
             print(f"Viewing Direction: {orientation}")
-
+ 
     return frame, ids, orientation
-
+ 
 def adjust_contrast(gray, contrast_factor, contrast_radius):
     height, width = gray.shape
     center_x, center_y = width // 2, height // 2
@@ -217,18 +254,18 @@ def adjust_contrast(gray, contrast_factor, contrast_radius):
     adjusted_region = cv2.convertScaleAbs(outside_region, alpha=contrast_factor, beta=0)
     gray = cv2.add(cv2.bitwise_and(gray, gray, mask=cv2.bitwise_not(mask)), adjusted_region)
     return gray
-
+ 
 def get_binary_image(gray, threshold_value):
     _, binary_thresh = cv2.threshold(gray, threshold_value, 255, cv2.THRESH_BINARY)
     binary_thresh = cv2.bitwise_not(binary_thresh)
     binary_thresh = cv2.morphologyEx(binary_thresh, cv2.MORPH_OPEN, kernel, iterations=2)
     return binary_thresh
-
+ 
 # def get_adjusted_directions(orientation):
 #     directions = ["north", "east", "south", "west"]
 #     idx = directions.index(orientation)
 #     return directions[idx:] + directions[:idx]
-
+ 
 def find_and_draw_contours(frame, binary_thresh,orientation, marker_detected):
     contours, hierarchy = cv2.findContours(binary_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     frame_center_x = frame.shape[1] // 2  # Calculate the center of the frame
@@ -250,13 +287,13 @@ def find_and_draw_contours(frame, binary_thresh,orientation, marker_detected):
             cv2.putText(frame, offset_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
             cv2.drawContours(frame, [largest_contour], -1, (0, 255, 0), 2)
             cv2.circle(frame, (cx, cy), 5, (0, 0, 255), -1)
-
+ 
     if marker_detected:
         # Draw compass-like lines in the upper right corner
         compass_length = 30  # Length of the compass lines
         compass_center_x = frame.shape[1] - 50  # X coordinate for the compass center
         compass_center_y = 50  # Y coordinate for the compass center
-            
+ 
         # Define the direction order based on the received orientation being "north"
         direction_map = {
                 "north": ["north", "east", "south", "west"],
@@ -264,7 +301,7 @@ def find_and_draw_contours(frame, binary_thresh,orientation, marker_detected):
                 "south": ["south", "west", "north", "east"],
                 "west": ["west", "north", "east", "south"]
             }
-            
+ 
         adjusted_directions = direction_map[orientation.lower()]
         compass_points = {
                 "north": (0, -compass_length),          # Up
@@ -272,7 +309,7 @@ def find_and_draw_contours(frame, binary_thresh,orientation, marker_detected):
                 "south": (0, compass_length),           # Down
                 "west": (-compass_length, 0)            # Left
             }
-            
+ 
             # Draw the compass with the orientation as "north"
         for i, direction in enumerate(adjusted_directions):
             dx, dy = compass_points[list(compass_points.keys())[i]]
@@ -280,18 +317,18 @@ def find_and_draw_contours(frame, binary_thresh,orientation, marker_detected):
             color = (0, 255, 255) if direction == "north" else (255, 0, 0)
             cv2.line(frame, (compass_center_x, compass_center_y), end_point, color, 2)
             cv2.putText(frame, direction[0].upper(), end_point, cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
-            
+ 
         # Draw marker text just below the compass
         marker_text = f"facing: {orientation.capitalize()}"
         cv2.putText(frame, marker_text, (compass_center_x - 40, compass_center_y + compass_length + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1)    
-                
+ 
     cv2.circle(frame, (frame_center_x, frame_center_y), 5, (255, 0, 0), -1)  # Draw a blue circle at the center
     return frame, horizontal_offset, foundContours
-
+ 
 def show_frames(binary_thresh, frame):
     cv2.imshow('binary view', binary_thresh)
     cv2.imshow('colored view', frame)
-
+ 
 # Function to send commands to the ESP32 server
 def send_command(command):
     try:
@@ -308,7 +345,7 @@ def send_command(command):
     except urllib.error.URLError as e:
         print(f"Error sending {command} command: {e}")
         return None  # Return None if no command was sent
-
+ 
 def opposite_command(command):
     if command == GO:
         return BACK
@@ -323,7 +360,7 @@ def opposite_command(command):
     elif command == CROSS:
         return CROSS_back
     return command
-
+ 
 def extract_path_data(json_data):
     # Extracting data from JSON
     directions = json_data['shortest_path']['directions']
@@ -332,36 +369,36 @@ def extract_path_data(json_data):
     orderid = json_data['shortest_path']['orderid']
     orientation = json_data['shortest_path']['orientation']
     trip_id = json_data['trip_id']
-
+ 
     # Convert path elements to integers
     path = [int(p) for p in path]
-
+ 
     # Create a dictionary where the key is the path number and the value is the direction
     path_from_marker_dict = {path[i]: directions[i] for i in range(len(path)-1)}
-
+ 
     # Create a list of lists where each sublist contains a number the time (initially None) and average offset (initially None)
     number_list_with_time = [[num, None, None] for num in path]
-
+ 
     print("Dictionary (path number to direction):")
     print(path_from_marker_dict)
-
+ 
     print("\nList of all numbers:")
     print(number_list_with_time)
-
+ 
     print("\nMap ID:")
     print(mapid)
-
+ 
     print("\nOrder ID:")
     print(orderid)
-
+ 
     print("\nOrientation:")
     print(orientation)
-
+ 
     print("\nTrip ID:")
     print(trip_id)
-
+ 
     return path_from_marker_dict, number_list_with_time, mapid, orderid, orientation, trip_id
-
+ 
 def turn_direction(orientation, direction):
     if orientation == "north":
         if direction == "west":
@@ -392,7 +429,7 @@ def opposite_direction(direction):
         return "west"
     elif direction == "west":
         return "east"
-    
+ 
 def calculate_direction_acording_to_orientation(orientation, marker_number, path_from_marker_dict):
     if orientation == path_from_marker_dict[marker_number]:
         return CROSS
@@ -400,13 +437,13 @@ def calculate_direction_acording_to_orientation(orientation, marker_number, path
         return TURN_AROUND
     else:
         return turn_direction(orientation, path_from_marker_dict[marker_number])
-
+ 
 # Function to convert rotation vector to Euler angles
 def rotation_vector_to_euler_angles(rvec):
     rotation_matrix, _ = cv2.Rodrigues(rvec)
     sy = math.sqrt(rotation_matrix[0, 0] ** 2 + rotation_matrix[1, 0] ** 2)
     singular = sy < 1e-6
-
+ 
     if not singular:
         #roll = math.atan2(rotation_matrix[2, 1], rotation_matrix[2, 2])
         #pitch = math.atan2(-rotation_matrix[2, 0], sy)
@@ -415,14 +452,14 @@ def rotation_vector_to_euler_angles(rvec):
         #roll = math.atan2(-rotation_matrix[1, 2], rotation_matrix[1, 1])
         #pitch = math.atan2(-rotation_matrix[2, 0], sy)
         yaw = 0
-
+ 
     #return roll, pitch, yaw
     return yaw
-
+ 
 def send_request_to_server(params, server_endpoint, method):
     # Define the URL and parameters
     url = server_endpoint
-
+ 
     # Send the request based on the specified method
     if method == "GET":
         response = requests.get(url, params=params)
@@ -434,7 +471,7 @@ def send_request_to_server(params, server_endpoint, method):
         response = requests.delete(url, params=params)
     else:
         raise ValueError(f"Unsupported HTTP method: {method}")
-
+ 
     # Check if the request was successful
     if response.status_code == 200:
         # Parse the JSON response
@@ -443,7 +480,7 @@ def send_request_to_server(params, server_endpoint, method):
     else:
         print(f"Request failed with status code {response.status_code}")
         return None
-    
+ 
 def prepare_data_for_server(trip_id, marker_number, mapid, average_offset, number_list, numbers_list_idx, approximation):
     number_list[numbers_list_idx][1] = datetime.now()
     #time_to_send= number_list[numbers_list_idx][1].strftime("%H:%M:%S") if wont work need to fix
@@ -457,7 +494,7 @@ def prepare_data_for_server(trip_id, marker_number, mapid, average_offset, numbe
                 "approximation": approximation
             }
     return params 
-
+ 
 def finish_sending_all_requests(trip_id,number_list,mapid):
     minimum_offset = number_list[len(number_list) -1][2]
     smallest_time = number_list[0][1]
@@ -471,7 +508,7 @@ def finish_sending_all_requests(trip_id,number_list,mapid):
     i=1
     found_end_of_gap = False
     gap_list = []
-
+ 
     while i < len(number_list):
         counter = 0
         while found_end_of_gap == False and i < len(number_list):
@@ -491,7 +528,7 @@ def finish_sending_all_requests(trip_id,number_list,mapid):
             smallest_time = number_list[i][1]
             found_end_of_gap = False
         i+=1
-
+ 
 def check_if_skipped_checkpoint(marker_number, number_list, numbers_list_idx):
     number = numbers_list_idx
     found = False
@@ -500,9 +537,9 @@ def check_if_skipped_checkpoint(marker_number, number_list, numbers_list_idx):
             found = True
             return found, number
         number+=1
-
+ 
     return found, number
-  
+ 
 def process_frames(sock, bytes):
     global orientation
     global path_data
@@ -522,6 +559,9 @@ def process_frames(sock, bytes):
     frame_number = 0
     frame_for_avg_offset = 0
     frame_on_checkpoint_encounter = 0
+ 
+    start_send_frames_thread() # Start the send_frames thread
+ 
     while True:
         threshold_value, contrast_factor, contrast_radius = get_trackbar_values()
         jpg, bytes = get_latest_frame_bytes(sock, bytes) # Get the latest frame bytes
@@ -551,6 +591,7 @@ def process_frames(sock, bytes):
                         else:
                             print("wrong turn - Requesting new route from server...")
                             speak("Wrong turn - Requesting new route from server...")
+                            stop_send_frames_thread()
                             is_busy = False
                             params = {
                                 "mapid": mapid,
@@ -564,6 +605,7 @@ def process_frames(sock, bytes):
                             path_from_marker_dict, number_list, mapid, orderid, orientation, trip_id = extract_path_data(path_data)
                             print("new route received- procceding...")
                             speak("New route received - proceeding...")
+                            start_send_frames_thread()
                             numbers_list_idx = 0
                             is_busy = True
                             continue
@@ -576,6 +618,7 @@ def process_frames(sock, bytes):
                         send_request_to_server(params, URL_FOR_CHECKPOINT_UPDATES, "POST")
                         finish_sending_all_requests(trip_id,number_list,mapid)
                         speak("Finished delivery - awaiting new orders...")
+                        stop_send_frames_thread()  # Stop the send_frames thread
                         break
                     elif id_of_marker[0][0] == number_list[numbers_list_idx][0]:
                         command_sent = calculate_direction_acording_to_orientation(orientation, id_of_marker[0][0], path_from_marker_dict)
@@ -586,17 +629,18 @@ def process_frames(sock, bytes):
                         send_request_to_server(params, URL_FOR_CHECKPOINT_UPDATES, "POST")
                         numbers_list_idx += 1
                     elif id_of_marker[0][0] == previous_marker[0] and (frame_number > (frame_on_checkpoint_encounter + FRAMES_BEFORE_SAME_TURN) or previous_command == CROSS):
-                        command_sent = previous_command
+                        #command_sent = previous_command
+                        command_sent = calculate_direction_acording_to_orientation(orientation, id_of_marker[0][0], path_from_marker_dict)
                         frame_on_checkpoint_encounter = frame_number
-
+ 
                     if send_commands == True:
                         # If it is not, send the command
                         send_command(command_sent)
                         previous_marker = id_of_marker[0]
-                    
+ 
                     if command_sent is not None:
                         command_was_sent = True
-                                
+ 
                     consecutive_left = 10
                     consecutive_right = 10
                     cruise_mode_counter = 7
@@ -630,7 +674,7 @@ def process_frames(sock, bytes):
                                 consecutive_left = 10
                                 consecutive_right = 10
                                 cruise_mode_counter = 15
-                               
+ 
                     else:  #emergency stop
                         command_sent = send_command(STOP)
                     command_was_sent = True
@@ -640,7 +684,10 @@ def process_frames(sock, bytes):
                 elif consecutive_right == 0:  # if stuck on right turn perform strong right turn
                     send_command(HEAVY_RIGHT)
                     consecutive_right = 10
-
+ 
+                # Add the frames to the queue
+                frame_queue.put((frame, binary_thresh))
+ 
                 show_frames(binary_thresh, frame)
                 key = cv2.waitKey(1)
                 if key == 27:
@@ -648,9 +695,9 @@ def process_frames(sock, bytes):
                     break
                 elif key == ord('d'):  # If the "d" key is pressed, toggle the flag
                     send_commands = not send_commands
-                    
+ 
     cv2.destroyAllWindows()
-
+ 
 def main():
     global is_busy
     is_busy = True  # Set the server status to busy
@@ -658,7 +705,7 @@ def main():
         current_fps = 30  # Set this to your desired FPS
         set_fps(current_fps)  # Set the initial FPS
         bytes = b''
-        
+ 
         #stream_url = "your_stream_url"  # Replace with your actual stream URL
         sock = setup_non_blocking_stream(stream_url)
         try:
@@ -667,24 +714,25 @@ def main():
             sock.close()  # Ensure the socket is closed at the end
     finally:
         is_busy = False  # Reset the server status
-
+ 
 @vehicle_module.route('/process_path', methods=['POST'])
 def process_path():
     global is_busy, path_data
     if is_busy:
         return jsonify({"error": "Server is busy"}), 503  # Return a 503 Service Unavailable error
-
+ 
     if request.is_json:
         data = request.get_json()
         # Process the JSON data if needed
         path_data = data
         if "shortest_path" in path_data:
-            main()  # Run the main function
+            #main()  # Run the main function
+            threading.Thread(target=main).start()
             return jsonify({"status": "Processing started"}), 202
         else:
             return jsonify({"error": "Invalid JSON structure"}), 400
     else:
         return jsonify({"error": "Invalid request format"}), 400
-
+ 
 if __name__ == '__main__':
     vehicle_module.run(debug=False, port=5001)  # Run the Flask app on port 5001
