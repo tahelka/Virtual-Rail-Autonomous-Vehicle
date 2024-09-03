@@ -8,6 +8,8 @@ const WorstOffsetChart = ({ worstOffsets = [] }) => {
 
   useEffect(() => {
     const createChartData = () => {
+      console.log("creation chart data");
+      console.log("Last node added to worstOffsets:", worstOffsets[0].trip_id);
       // Get the first 'viewWindow' trips and reverse them to display oldest on the right
       const visibleData = worstOffsets.slice(0, viewWindow).reverse();
 
@@ -66,7 +68,7 @@ const WorstOffsetChart = ({ worstOffsets = [] }) => {
   return (
     <Box sx={{ width: '100%', textAlign: 'center' }}>
       <Box sx={{ height: '400px', width: '800px', margin: '0 auto' }}>
-        {chartData.labels ? <Line data={chartData} options={options} /> : <p>No data available</p>}
+        {chartData.labels ? <Line data={chartData} options={options} redraw /> : <p>No data available</p>}
       </Box>
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, gap: 2 }}>
         <Button variant="contained" color="primary" onClick={() => handleZoom('in')}>

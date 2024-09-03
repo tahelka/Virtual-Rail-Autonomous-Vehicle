@@ -63,7 +63,7 @@ const Statistics = () => {
           arrived_to_destination: newTrip.arrived_to_destination,
         };
 
-        const updatedTelemetryData = [...prevData, newTripData];
+        const updatedTelemetryData = [newTripData, ...prevData];
 
         localStorage.setItem('telemetryData', JSON.stringify(updatedTelemetryData));
 
@@ -89,7 +89,7 @@ const Statistics = () => {
           <Typography variant="body1" color="text.secondary" paragraph>
             Displays the worst lane tracking accuracy of trips over time.
           </Typography> 
-          <WorstOffsetChart worstOffsets={telemetryData.reverse()} />
+          <WorstOffsetChart worstOffsets={telemetryData} />
         </Grid>
         <Grid item xs={10}>
           <Typography variant="body1" color="text.secondary" paragraph>
