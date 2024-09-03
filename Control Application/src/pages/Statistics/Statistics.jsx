@@ -65,16 +65,16 @@ const Statistics = () => {
   return (
     <div className="w-full min-w-[320px] overflow-x-auto">
       <div className="max-w-7xl mx-auto px-4">
-        <Typography variant="h5" gutterBottom sx={{ marginBottom: "20px" }}>
-          Trip Statistics
-        </Typography>
-        <Grid container spacing={4}>
-          <Grid item xs={12}>
+        <Grid container spacing={8}>
+          <Grid item xs={10}>
+            <Typography variant="body1" color="text.secondary" paragraph>
+              Displays the worst offset values of trips over time.
+            </Typography> 
             <WorstOffsetChart worstOffsets={telemetryData.reverse()} />
           </Grid>
-          <Grid item xs={12}>
+          <Grid item xs={10}>
             <Typography variant="body1" color="text.secondary" paragraph>
-              illustrates the number of vehicles that have arrived at their destination versus those that are still en route.
+              Illustrates the number of vehicles that have arrived at their destination versus those that are still en route.
             </Typography>
             <ArrivedDestinationChart numbersOfTripsArrived={numbersOfTripsArrived} totalTrips={telemetryData.length} />
           </Grid>
