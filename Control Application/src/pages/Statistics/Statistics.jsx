@@ -35,6 +35,7 @@ const Statistics = () => {
       fetchTelemetryData();
     }
 
+    // Listen for trip updates
     socket.on("trip_update", (updatedTrip) => {
       console.log("New trip update received:", updatedTrip);
       setTelemetryData((prevData) => {
@@ -52,8 +53,27 @@ const Statistics = () => {
       });
     });
 
+    // Listen for new trip creation
+    socket.on("new_trip", (newTrip) => {
+      console.log("New trip created:", newTrip);
+      setTelemetryData((prevData) => {
+        const newTripData = {
+          trip_id: newTrip.trip_id,
+          worst_offset: newTrip.avg_offset,
+          arrived_to_destination: newTrip.arrived_to_destination,
+        };
+
+        const updatedTelemetryData = [...prevData, newTripData];
+
+        localStorage.setItem('telemetryData', JSON.stringify(updatedTelemetryData));
+
+        return updatedTelemetryData;
+      });
+    });
+
     return () => {
       socket.off("trip_update");
+      socket.off("new_trip");
     };
   }, []);
 
@@ -67,7 +87,7 @@ const Statistics = () => {
       <Grid container spacing={8}>
         <Grid item xs={10}>
           <Typography variant="body1" color="text.secondary" paragraph>
-            Displays the worst offset values of trips over time.
+            Displays the worst lane tracking accuracy of trips over time.
           </Typography> 
           <WorstOffsetChart worstOffsets={telemetryData.reverse()} />
         </Grid>

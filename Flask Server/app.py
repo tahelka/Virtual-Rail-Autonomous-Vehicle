@@ -260,7 +260,7 @@ def get_route_instructions():
             }           
 
             try:
-                socketio.emit('trip_update', serialize_document(trip_document_for_emitting))
+                socketio.emit('new_trip', serialize_document(trip_document_for_emitting))
                 print("Emitted trip_update successfully.")
                 
             except Exception as e:
