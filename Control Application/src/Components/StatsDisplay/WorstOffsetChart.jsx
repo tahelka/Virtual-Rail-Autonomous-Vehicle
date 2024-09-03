@@ -9,8 +9,6 @@ const WorstOffsetChart = ({ worstOffsets = [] }) => {
 
   useEffect(() => {
     const createChartData = () => {
-      console.log("creation chart data");
-      console.log("Last node added to worstOffsets:", worstOffsets[0].trip_id);
       // Get the first 'viewWindow' trips and reverse them to display oldest on the right
       const visibleData = worstOffsets.slice(0, viewWindow).reverse();
 
