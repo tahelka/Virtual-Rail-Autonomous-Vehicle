@@ -27,9 +27,12 @@ const RealTimeStatsDisplay = ({ checkpointsData }) => {
   }, [checkpointsData]);
 
   const handleZoom = (direction) => {
-    setViewWindow(prev => {
-      if (direction === 'in') return Math.max(5, prev - 5);
-      if (direction === 'out') return Math.min(100, prev + 5);
+    setViewWindow((prev) => {
+      if (direction === 'in') {
+        return Math.max(5, prev - 5);
+      } else if (direction === 'out') {
+        return prev + 5 <= offsetData.length ? Math.min(100, prev + 5) : prev;
+      }
       return prev;
     });
   };
