@@ -21,8 +21,8 @@ CORS(app)  # Enable CORS for all routes
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # MongoDB connection setup
-# client = MongoClient("mongodb://mongodb:password@localhost:27018/")
-client = MongoClient("mongodb+srv://mongodb:Ha6j5kggIMvKE55S@cluster0.1kxk0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+client = MongoClient("mongodb://mongodb:password@localhost:27018/")
+#client = MongoClient("mongodb+srv://mongodb:Ha6j5kggIMvKE55S@cluster0.1kxk0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client['talide']  
 maps_collection = db['maps']
 trips_collection = db['trips']
@@ -64,8 +64,7 @@ def insert_vehicle_checkpoint():
     if not trip:
         return jsonify({'error': 'Trip not found'}), 404
 
-    destination_point = trip['destination_point']
-    has_arrived = 1 if data['checkpoint_id'] == destination_point else 0
+    has_arrived = 1 if data['checkpoint_id'] == trip['destination_point'] else 0
 
     checkpoint_doc = {
         'trip_id': data['trip_id'],
@@ -388,42 +387,7 @@ def handle_connect():
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    print('Client disconnected')
-
-###
-
-# @app.route('/api/trips/worst_offsets', methods=['GET'])
-# def get_all_worst_offsets():
-#     try:
-#         # Retrieve all trips
-#         trips = list(trips_collection.find())  # Convert to list for easier debugging
-        
-#         # Retrieve all trips, regardless of whether they have arrived at their destination
-#         #trips = list(trips_collection.find({'arrived_at_destination': True})) # Convert to list for easier debugging
-        
-#         print(f"Number of trips found: {len(trips)}")  # Debug log
-
-#         worst_offsets = []
-        
-#         for trip in trips:
-#             trip_id = str(trip['_id'])
-#             worst_offset = calculate_worst_offset(trip_id)
-#             worst_offsets.append({
-#                 'trip_id': trip_id,
-#                 'worst_offset': worst_offset
-#             })
-#             # print(f"Processed trip {trip_id} with worst offset {worst_offset}")  # Debug log
-        
-#         return jsonify(worst_offsets), 200
-#     except Exception as e:
-#         print(f"Error in get_all_worst_offsets: {str(e)}")
-#         return jsonify({"error": "Internal server error"}), 500
-
-# def calculate_worst_offset(trip_id):
-#     # Calculate and return the worst average offset for the given trip
-#     checkpoints = vehicle_checkpoints_collection.find({'trip_id': trip_id})
-#     worst_offset = max((checkpoint.get('avg_offset', 0) for checkpoint in checkpoints), default=0)
-#     return worst_offset
+    print('Client disconnected')   
 
 @app.route('/api/trips/telemetry', methods=['GET'])
 def get_all_trip_telemetry():
@@ -489,19 +453,3 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     from config import DEFAULT_PORT
     socketio.run(app, debug=True, port=DEFAULT_PORT)
-
-###
-
-# @socketio.on('connect')
-# def handle_connect():
-#     print("Client connected")
-#     emit('response', {'message': 'Connected to server'})
-
-# @socketio.on('disconnect')
-# def handle_disconnect():
-#     print("Client disconnected")
-
-
-# if __name__ == '__main__':
-#     from config import DEFAULT_PORT
-#     socketio.run(app, debug=True, port=DEFAULT_PORT)
