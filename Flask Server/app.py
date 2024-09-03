@@ -21,8 +21,8 @@ CORS(app)  # Enable CORS for all routes
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # MongoDB connection setup
-client = MongoClient("mongodb://mongodb:password@localhost:27018/")
-# client = MongoClient("mongodb+srv://mongodb:Ha6j5kggIMvKE55S@cluster0.1kxk0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+# client = MongoClient("mongodb://mongodb:password@localhost:27018/")
+client = MongoClient("mongodb+srv://mongodb:Ha6j5kggIMvKE55S@cluster0.1kxk0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client['talide']  
 maps_collection = db['maps']
 trips_collection = db['trips']
@@ -59,13 +59,21 @@ def insert_vehicle_checkpoint():
         if field not in data:
             return jsonify({'error': f'Missing field: {field}'}), 400
 
+    # Retrieve the trip document to get the destination point
+    trip = trips_collection.find_one({'_id': ObjectId(data['trip_id'])})
+    if not trip:
+        return jsonify({'error': 'Trip not found'}), 404
+
+    destination_point = trip['destination_point']
+    has_arrived = 1 if data['checkpoint_id'] == destination_point else 0
+
     checkpoint_doc = {
         'trip_id': data['trip_id'],
         'checkpoint_id': data['checkpoint_id'],
         'map_id': data['map_id'],
         'avg_offset': data['average_offset'],
         'created_at': datetime.now(),
-        'arrived_at_destination': False      # tahel
+        'arrived_at_destination': has_arrived
     }
 
     checkpoint_doc['created_at'] = checkpoint_doc['created_at'].strftime("%Y-%m-%d %H:%M:%S") 
@@ -74,7 +82,7 @@ def insert_vehicle_checkpoint():
 
     checkpoint_doc['_id'] = str(checkpoint_doc['_id']) 
     socketio.emit('checkpoint_data', checkpoint_doc)
-    socketio.emit('trip_update', serialize_document(checkpoint_doc)) # tahel
+    socketio.emit('trip_update', serialize_document(checkpoint_doc))
 
     return jsonify({'result': 'success', 'inserted_id': str(result.inserted_id)}), 200
 
@@ -235,6 +243,8 @@ def get_route_instructions():
                 "orderid": orderid,
             }
             
+            has_arrived = 1 if start == target else 0
+
             # Create a new trip document
             trip_id = str(uuid.uuid4())  # Generate a unique ID for the trip
             trip_document = {
@@ -247,18 +257,18 @@ def get_route_instructions():
                 "created_at": datetime.now(),
                 "directions": calculated_path["directions"],
                 "path": calculated_path["path"],
-                "arrived_at_destination": False,
+                "arrived_at_destination": has_arrived,
                 "avg_offset": 0.0,
             }
 
             # Insert the trip document into the trips collection
             result = trips_collection.insert_one(trip_document)
 
-            trip_document_for_emitting = { # tahel
+            trip_document_for_emitting = { 
             'trip_id': str(result.inserted_id),
             'avg_offset': 0,
-            'created_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S") ,
-            "arrived_at_destination": False     
+            'created_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "arrived_at_destination": has_arrived
             }           
 
             url = "http://127.0.0.1:5001/process_path"
@@ -433,13 +443,13 @@ def get_all_trip_telemetry():
 
                 worst_offset = calculate_worst_offset(trip_id)
 
-                arrived_to_destination = is_trip_arrived_to_destination(trip_id)
+                arrived_at_destination = is_trip_arrived_to_destination(trip_id)
                 
                 # Construct the telemetry data
                 telemetry = {
                     'trip_id': trip_id,
                     'worst_offset': worst_offset,
-                    'arrived_to_destination': arrived_to_destination,
+                    'arrived_at_destination': arrived_at_destination,
                 }
                 
                 telemetry_data.append(telemetry)
@@ -465,11 +475,15 @@ def calculate_worst_offset(trip_id):
 def is_trip_arrived_to_destination(trip_id):
     try:
         trip_id = ObjectId(trip_id)
-        trip = trips_collection.find_one({'_id': trip_id, 'arrived_at_destination': True})
-        return bool(trip)  # Return True if the trip is found, otherwise False
+        trip = trips_collection.find_one({'_id': trip_id, 'arrived_at_destination': 1})
+        if trip:
+            return 1  # Return 1 if the trip has arrived at the destination
+        else:
+            return 0  # Return 0 if the trip hasn't arrived or is not found
     except Exception as e:
         print(f"Error checking arrival status for trip ID {trip_id}: {str(e)}")
-        return False
+        return 0
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)

@@ -2,14 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Box } from '@mui/material';
-
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-const ArrivedDestinationChart = ({ numbersOfTripsArrived = 0, totalTrips = 0 }) => {
+const ArrivedDestinationChart = ({ telemetryData = [] }) => {
   const [chartData, setChartData] = useState(null);
 
   useEffect(() => {
-    if (totalTrips > 0) {
+    if (telemetryData.length > 0) {
+      const numbersOfTripsArrived = telemetryData.filter(data => data.arrived_at_destination == 1).length;
+      const totalTrips = telemetryData.length;
+      // console.log("arrived", numbersOfTripsArrived, "not arrived", totalTrips - numbersOfTripsArrived);
+      
       const data = {
         labels: ['Arrived', 'Not Arrived'],
         datasets: [
@@ -24,7 +27,7 @@ const ArrivedDestinationChart = ({ numbersOfTripsArrived = 0, totalTrips = 0 }) 
       };
       setChartData(data);
     }
-  }, [numbersOfTripsArrived, totalTrips]);
+  }, [telemetryData]);
 
   const options = {
     responsive: true,
@@ -33,7 +36,7 @@ const ArrivedDestinationChart = ({ numbersOfTripsArrived = 0, totalTrips = 0 }) 
         callbacks: {
           label: function (tooltipItem) {
             const value = tooltipItem.raw;
-            const total = numbersOfTripsArrived + (totalTrips - numbersOfTripsArrived);
+            const total = telemetryData.length;
             const percentage = ((value / total) * 100).toFixed(2);
             return `${tooltipItem.label}: ${percentage}% (${value} trips)`;
           },

@@ -44,7 +44,7 @@ const Statistics = () => {
             ? {
                 ...trip,
                 worst_offset: Math.max(trip.worst_offset, updatedTrip.avg_offset),
-                arrived_to_destination: trip.arrived_to_destination || updatedTrip.arrived_to_destination,
+                arrived_at_destination: trip.arrived_at_destination || updatedTrip.arrived_at_destination,
               }
             : trip
         );
@@ -60,7 +60,7 @@ const Statistics = () => {
         const newTripData = {
           trip_id: newTrip.trip_id,
           worst_offset: newTrip.avg_offset,
-          arrived_to_destination: newTrip.arrived_to_destination,
+          arrived_at_destination: newTrip.arrived_at_destination,
         };
 
         const updatedTelemetryData = [newTripData, ...prevData];
@@ -80,8 +80,6 @@ const Statistics = () => {
   if (isLoading) return <span>Loading...</span>;
   if (error) return <span>{error}</span>;
 
-  const numbersOfTripsArrived = telemetryData.filter(data => data.arrived_to_destination).length;
-
   return (
     <div>
       <Grid container spacing={8}>
@@ -95,7 +93,7 @@ const Statistics = () => {
           <Typography variant="body1" color="text.secondary" paragraph>
             Illustrates the number of vehicles that have arrived at their destination versus those that are still en route.
           </Typography>
-          <ArrivedDestinationChart numbersOfTripsArrived={numbersOfTripsArrived} totalTrips={telemetryData.length} />
+          <ArrivedDestinationChart telemetryData={telemetryData} />
         </Grid>
       </Grid>
     </div>
