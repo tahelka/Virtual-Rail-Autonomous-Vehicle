@@ -21,8 +21,8 @@ CORS(app)  # Enable CORS for all routes
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # MongoDB connection setup
-# client = MongoClient("mongodb://mongodb:password@localhost:27018/")
-client = MongoClient("mongodb+srv://mongodb:Ha6j5kggIMvKE55S@cluster0.1kxk0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+client = MongoClient("mongodb://mongodb:password@localhost:27018/")
+# client = MongoClient("mongodb+srv://mongodb:Ha6j5kggIMvKE55S@cluster0.1kxk0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client['talide']  
 maps_collection = db['maps']
 trips_collection = db['trips']
