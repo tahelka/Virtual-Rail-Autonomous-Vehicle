@@ -63,7 +63,7 @@ def insert_vehicle_checkpoint():
         'map_id': data['map_id'],
         'avg_offset': data['average_offset'],
         'created_at': datetime.now(),
-        "arrived_at_destination": False      # tahel
+        'arrived_at_destination': False      # tahel
     }
 
     checkpoint_doc['created_at'] = checkpoint_doc['created_at'].strftime("%Y-%m-%d %H:%M:%S") 
@@ -248,10 +248,23 @@ def get_route_instructions():
                 "arrived_at_destination": False,
                 "avg_offset": 0.0,
             }
-            
+
             # Insert the trip document into the trips collection
             trips_collection.insert_one(trip_document)
-            # socketio.emit('trip_update', serialize_document(trips_collection)) # tahel
+
+            trip_document_for_emitting = { # tahel
+            'trip_id': trip_id,
+            'avg_offset': 0,
+            'created_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S") ,
+            "arrived_at_destination": False     
+            }           
+
+            try:
+                socketio.emit('trip_update', serialize_document(trip_document_for_emitting))
+                print("Emitted trip_update successfully.")
+                
+            except Exception as e:
+                print(f"Error emitting trip_update: {e}")
 
             return jsonify({
                 "shortest_path": calculated_path,
