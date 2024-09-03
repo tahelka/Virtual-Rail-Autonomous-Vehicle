@@ -252,10 +252,10 @@ def get_route_instructions():
             }
 
             # Insert the trip document into the trips collection
-            trips_collection.insert_one(trip_document)
+            result = trips_collection.insert_one(trip_document)
 
             trip_document_for_emitting = { # tahel
-            'trip_id': trip_id,
+            'trip_id': str(result.inserted_id),
             'avg_offset': 0,
             'created_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S") ,
             "arrived_at_destination": False     
