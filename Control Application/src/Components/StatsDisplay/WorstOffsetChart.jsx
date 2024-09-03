@@ -5,6 +5,7 @@ import { Box, Button } from '@mui/material';
 const WorstOffsetChart = ({ worstOffsets = [] }) => {
   const [viewWindow, setViewWindow] = useState(10); // Default to showing 10 trips at a time
   const [chartData, setChartData] = useState({});
+  const [redraw, setRedraw] = useState(false); // Track when to redraw the chart
 
   useEffect(() => {
     const createChartData = () => {
@@ -31,6 +32,7 @@ const WorstOffsetChart = ({ worstOffsets = [] }) => {
     };
 
     setChartData(createChartData());
+    setRedraw(true);
   }, [worstOffsets, viewWindow]);
 
   const options = {
@@ -58,6 +60,7 @@ const WorstOffsetChart = ({ worstOffsets = [] }) => {
   };
 
   const handleZoom = (direction) => {
+    setRedraw(false);
     setViewWindow(prev => {
       if (direction === 'in') return Math.max(5, prev - 5);
       if (direction === 'out') return Math.min(worstOffsets.length, prev + 5);
@@ -68,7 +71,7 @@ const WorstOffsetChart = ({ worstOffsets = [] }) => {
   return (
     <Box sx={{ width: '100%', textAlign: 'center' }}>
       <Box sx={{ height: '400px', width: '800px', margin: '0 auto' }}>
-        {chartData.labels ? <Line data={chartData} options={options} redraw /> : <p>No data available</p>}
+        {chartData.labels ? <Line data={chartData} options={options}/> : <p>No data available</p>}
       </Box>
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, gap: 2 }}>
         <Button variant="contained" color="primary" onClick={() => handleZoom('in')}>
