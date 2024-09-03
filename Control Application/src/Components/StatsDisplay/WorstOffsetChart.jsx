@@ -1,29 +1,35 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Line } from 'react-chartjs-2';
 import { Box, Button } from '@mui/material';
 
-const WorstOffsetChart = ({ worstOffsets }) => {
+const WorstOffsetChart = ({ worstOffsets = [] }) => {
   const [viewWindow, setViewWindow] = useState(10); // Default to showing 10 trips at a time
+  const [chartData, setChartData] = useState({});
 
-  const createChartData = () => {
-    const visibleData = worstOffsets.slice(-viewWindow); // Show only the last `viewWindow` number of trips
-    
-    return {
-      labels: visibleData.map(offset => offset.trip_id),
-      datasets: [
-        {
-          label: 'Worst Offset',
-          data: visibleData.map(offset => offset.worst_offset),
-          borderColor: 'rgb(255, 99, 132)',
-          backgroundColor: 'rgba(255, 99, 132, 0.5)',
-          fill: true,
-          tension: 0.4,
-          pointRadius: 3,
-          pointHoverRadius: 5,
-        }
-      ]
+  useEffect(() => {
+    const createChartData = () => {
+      // Get the first 'viewWindow' trips and reverse them to display oldest on the right
+      const visibleData = worstOffsets.slice(0, viewWindow).reverse();
+
+      return {
+        labels: visibleData.map(offset => offset.trip_id || "Unknown ID"),
+        datasets: [
+          {
+            label: 'Worst Offset',
+            data: visibleData.map(offset => offset.worst_offset || 0),
+            borderColor: 'rgb(255, 99, 132)',
+            backgroundColor: 'rgba(255, 99, 132, 0.5)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+          }
+        ]
+      };
     };
-  };
+
+    setChartData(createChartData());
+  }, [worstOffsets, viewWindow]);
 
   const options = {
     responsive: true,
@@ -60,7 +66,7 @@ const WorstOffsetChart = ({ worstOffsets }) => {
   return (
     <Box sx={{ width: '100%', textAlign: 'center' }}>
       <Box sx={{ height: '400px', width: '800px', margin: '0 auto' }}>
-        <Line data={createChartData()} options={options} />
+        {chartData.labels ? <Line data={chartData} options={options} /> : <p>No data available</p>}
       </Box>
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, gap: 2 }}>
         <Button variant="contained" color="primary" onClick={() => handleZoom('in')}>

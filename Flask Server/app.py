@@ -62,7 +62,8 @@ def insert_vehicle_checkpoint():
         'checkpoint_id': data['checkpoint_id'],
         'map_id': data['map_id'],
         'avg_offset': data['average_offset'],
-        'created_at': datetime.now()
+        'created_at': datetime.now(),
+        "arrived_at_destination": False      # tahel
     }
 
     checkpoint_doc['created_at'] = checkpoint_doc['created_at'].strftime("%Y-%m-%d %H:%M:%S") 
@@ -71,6 +72,7 @@ def insert_vehicle_checkpoint():
 
     checkpoint_doc['_id'] = str(checkpoint_doc['_id']) 
     socketio.emit('checkpoint_data', checkpoint_doc)
+    socketio.emit('trip_update', serialize_document(checkpoint_doc)) # tahel
 
     return jsonify({'result': 'success', 'inserted_id': str(result.inserted_id)}), 200
 
@@ -249,7 +251,8 @@ def get_route_instructions():
             
             # Insert the trip document into the trips collection
             trips_collection.insert_one(trip_document)
-            
+            # socketio.emit('trip_update', serialize_document(trips_collection)) # tahel
+
             return jsonify({
                 "shortest_path": calculated_path,
                 "trip_id": trip_id  # Include the trip ID in the response
@@ -392,9 +395,8 @@ def get_all_trip_telemetry():
         # Retrieve all trips 
         #trips = list(trips_collection.find())  # Convert to list for easier debugging
 
-        trips = list(trips_collection.find().sort('created_at', -1).limit(3)) # Convert to list for easier debugging
+        trips = list(trips_collection.find().sort('created_at', -1).limit(100)) # Convert to list for easier debugging
 
-        
         print(f"Number of trips found: {len(trips)}")
 
         telemetry_data = []
