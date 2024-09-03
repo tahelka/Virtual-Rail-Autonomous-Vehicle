@@ -381,11 +381,15 @@ static esp_err_t action_handler(httpd_req_t *req){
                     WheelAct(LOW, LOW, LOW, LOW); // Stop
                     delay(200);
                     WheelAct(high_speed, LOW, LOW, high_speed); // Turn left at high speed
-                    delay(500);
+                    delay(300);
                     WheelAct(LOW, LOW, LOW, LOW); // Stop
                     delay(200);
-                    WheelAct(regular_speed, LOW, regular_speed, LOW); // Move forward
+                    WheelAct(high_speed, LOW, high_speed, LOW); // Move forward at high speed
                     delay(200);
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                    delay(200);
+                    WheelAct(high_speed, LOW, LOW, high_speed); // Turn left at high speed
+                    delay(100);
                     WheelAct(LOW, LOW, LOW, LOW); // Stop
                 }  
                 // Turn right
@@ -401,11 +405,15 @@ static esp_err_t action_handler(httpd_req_t *req){
                     WheelAct(LOW, LOW, LOW, LOW); // Stop
                     delay(200);
                     WheelAct(LOW, high_speed, high_speed, LOW); // Turn right at high speed
-                    delay(500);
+                    delay(300);
                     WheelAct(LOW, LOW, LOW, LOW); // Stop
                     delay(200);
-                    WheelAct(regular_speed, LOW, regular_speed, LOW); // Move forward
+                    WheelAct(high_speed, LOW, high_speed, LOW); // Move forward at high speed
                     delay(200);
+                    WheelAct(LOW, LOW, LOW, LOW); // Stop
+                    delay(200);
+                    WheelAct(LOW, high_speed, high_speed, LOW); // Turn right at high speed
+                    delay(100);
                     WheelAct(LOW, LOW, LOW, LOW); // Stop
                 } 
                 // Move backward at high speed(cross intersection)

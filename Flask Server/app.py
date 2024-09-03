@@ -14,13 +14,14 @@ from datetime import datetime
 from bson import ObjectId
 from bson.json_util import dumps
 from bson import ObjectId
+import requests
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # MongoDB connection setup
-client = MongoClient("mongodb+srv://mongodb:Ha6j5kggIMvKE55S@cluster0.1kxk0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+client = MongoClient("mongodb://mongodb:password@localhost:27018/")
 db = client['talide']  
 maps_collection = db['maps']
 trips_collection = db['trips']
@@ -258,6 +259,17 @@ def get_route_instructions():
             'created_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S") ,
             "arrived_at_destination": False     
             }           
+
+            url = "http://127.0.0.1:5001/process_path"
+
+            try:
+                response = requests.post(url, json={
+                "shortest_path": calculated_path,
+                "trip_id": trip_id  # Include the trip ID in the response
+                })
+                response.raise_for_status()
+            except requests.exceptions.RequestException as e:
+                print(f"Error processing path: {e}")
 
             try:
                 socketio.emit('new_trip', serialize_document(trip_document_for_emitting))
