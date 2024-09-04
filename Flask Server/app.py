@@ -21,7 +21,7 @@ CORS(app)  # Enable CORS for all routes
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # MongoDB connection setup
-client = MongoClient("mongodb://mongodb:password@localhost:27018/")
+client = MongoClient("mongodb://localhost:27017/")
 #client = MongoClient("mongodb+srv://mongodb:Ha6j5kggIMvKE55S@cluster0.1kxk0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client['talide']  
 maps_collection = db['maps']
@@ -272,10 +272,15 @@ def get_route_instructions():
 
             url = "http://127.0.0.1:5001/process_path"
 
+            print({
+                "shortest_path": calculated_path,
+                "trip_id": str(result.inserted_id)  # Include the trip ID in the response
+                })
+
             try:
                 response = requests.post(url, json={
                 "shortest_path": calculated_path,
-                "trip_id": trip_id  # Include the trip ID in the response
+                "trip_id": str(result.inserted_id)  # Include the trip ID in the response
                 })
                 response.raise_for_status()
             except requests.exceptions.RequestException as e:
@@ -452,4 +457,4 @@ def is_trip_arrived_to_destination(trip_id):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     from config import DEFAULT_PORT
-    socketio.run(app, debug=True, port=DEFAULT_PORT)
+    socketio.run(app, debug=False, port=DEFAULT_PORT)
