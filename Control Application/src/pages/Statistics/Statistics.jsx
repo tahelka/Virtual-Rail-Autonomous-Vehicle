@@ -12,28 +12,30 @@ const Statistics = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchTelemetryData = async () => {
-    try {
-      const response = await axios.get(`http://localhost:5000/api/trips/telemetry`);
-      setTelemetryData(response.data);
-      localStorage.setItem('telemetryData', JSON.stringify(response.data));
-      console.log("Fetched telemetry data for all trips:", response.data);
-    } catch (error) {
-      console.error("Error fetching telemetry data:", error);
-      setError('Error fetching telemetry data.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    const cachedData = localStorage.getItem('telemetryData');
-    if (cachedData) {
-      setTelemetryData(JSON.parse(cachedData));
-      setIsLoading(false);
-    } else {
-      fetchTelemetryData();
-    }
+    // const cachedData = localStorage.getItem('telemetryData');
+    // if (cachedData) {
+    //   setTelemetryData(JSON.parse(cachedData));
+    //   setIsLoading(false);
+    // } else {
+    //   fetchTelemetryData();
+    // }
+
+    const fetchTelemetryData = async () => {
+      try {
+        const response = await axios.get(`http://localhost:5000/api/trips/telemetry`);
+        setTelemetryData(response.data);
+        //localStorage.setItem('telemetryData', JSON.stringify(response.data));
+        console.log("Fetched telemetry data for all trips:", response.data);
+      } catch (error) {
+        console.error("Error fetching telemetry data:", error);
+        setError('Error fetching telemetry data.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTelemetryData();
 
     // Listen for trip updates
     socket.on("trip_update", (updatedTrip) => {
@@ -48,7 +50,7 @@ const Statistics = () => {
               }
             : trip
         );
-        localStorage.setItem('telemetryData', JSON.stringify(updatedTelemetryData));
+        //localStorage.setItem('telemetryData', JSON.stringify(updatedTelemetryData));
         return updatedTelemetryData;
       });
     });
@@ -65,7 +67,7 @@ const Statistics = () => {
 
         const updatedTelemetryData = [newTripData, ...prevData];
 
-        localStorage.setItem('telemetryData', JSON.stringify(updatedTelemetryData));
+        //localStorage.setItem('telemetryData', JSON.stringify(updatedTelemetryData));
 
         return updatedTelemetryData;
       });
