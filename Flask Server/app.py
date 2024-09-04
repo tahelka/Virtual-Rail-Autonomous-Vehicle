@@ -42,11 +42,9 @@ def get_checkpoints_by_trip(trip_id):
     
     checkpoints_list = [serialize_document(doc) for doc in checkpoints]
     
-    
     if not checkpoints_list:
         return jsonify({'error': 'No checkpoints found for this trip_id'}), 404
 
-    
     return jsonify(checkpoints_list), 200
 
 @app.route('/api/vehicle_checkpoints', methods=['POST'])
@@ -445,8 +443,8 @@ def calculate_worst_offset(trip_id):
 
 def is_trip_arrived_to_destination(trip_id):
     try:
-        trip_id = ObjectId(trip_id)
-        trip = trips_collection.find_one({'_id': trip_id, 'arrived_at_destination': 1})
+        trip = vehicle_checkpoints_collection.find_one({'trip_id': trip_id, 'arrived_at_destination': 1})
+        print(trip)
         if trip:
             return 1  # Return 1 if the trip has arrived at the destination
         else:
