@@ -64,8 +64,10 @@ def insert_vehicle_checkpoint():
     if not trip:
         return jsonify({'error': 'Trip not found'}), 404
 
-    has_arrived = 1 if data['checkpoint_id'] == trip['destination_point'] else 0
-
+    destination_point = trip['destination_point']
+    has_arrived = 1 if data['checkpoint_id'] == destination_point else 0
+    print("point:", data['checkpoint_id'], "des:",trip['destination_point'], "has arrived:", has_arrived )
+    
     checkpoint_doc = {
         'trip_id': data['trip_id'],
         'checkpoint_id': data['checkpoint_id'],

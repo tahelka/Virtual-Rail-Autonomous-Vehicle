@@ -11,7 +11,7 @@ const ArrivedDestinationChart = ({ telemetryData = [] }) => {
     if (telemetryData.length > 0) {
       const numbersOfTripsArrived = telemetryData.filter(data => data.arrived_at_destination == 1).length;
       const totalTrips = telemetryData.length;
-      // console.log("arrived", numbersOfTripsArrived, "not arrived", totalTrips - numbersOfTripsArrived);
+      console.log("arrived", numbersOfTripsArrived, "not arrived", totalTrips - numbersOfTripsArrived);
       
       const data = {
         labels: ['Arrived', 'Not Arrived'],
