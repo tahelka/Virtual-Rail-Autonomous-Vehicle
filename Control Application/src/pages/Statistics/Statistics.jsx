@@ -14,7 +14,7 @@ const Statistics = () => {
 
   const fetchTelemetryData = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/trips/telemetry');
+      const response = await axios.get(`http://localhost:5000/api/trips/telemetry`);
       setTelemetryData(response.data);
       localStorage.setItem('telemetryData', JSON.stringify(response.data));
       console.log("Fetched telemetry data for all trips:", response.data);
