@@ -7,7 +7,7 @@ import socket
 import urllib.parse
 import os
 import sys
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, after_this_request
 import math
 import requests
 import pyttsx3
@@ -23,33 +23,33 @@ frame_queue = queue.Queue()
 # Create an event to signal the send_frames thread to stop
 stop_event = threading.Event()
  
-def send_frames():
-    while not stop_event.is_set():
-        try:
-            processed_frame, binary_thresh = frame_queue.get(timeout=1)
-        except queue.Empty:
-            continue
-        if processed_frame is None and binary_thresh is None:
-            break
-        _, buffer1 = cv2.imencode('.jpg', processed_frame)
-        jpg_as_text1 = buffer1.tobytes()
+# def send_frames():
+#     while not stop_event.is_set():
+#         try:
+#             processed_frame, binary_thresh = frame_queue.get(timeout=1)
+#         except queue.Empty:
+#             continue
+#         if processed_frame is None and binary_thresh is None:
+#             break
+#         _, buffer1 = cv2.imencode('.jpg', processed_frame)
+#         jpg_as_text1 = buffer1.tobytes()
  
-        _, buffer2 = cv2.imencode('.jpg', binary_thresh)
-        jpg_as_text2 = buffer2.tobytes()
+#         _, buffer2 = cv2.imencode('.jpg', binary_thresh)
+#         jpg_as_text2 = buffer2.tobytes()
  
-        try:
-            requests.post('http://localhost:5001/Video', files={'processed_frame': jpg_as_text1, 'binary_thresh': jpg_as_text2})
-        except Exception as e:
-            print(f"Error sending frames: {e}")
-        frame_queue.task_done()
+#         try:
+#             requests.post('http://localhost:5001/Video', files={'processed_frame': jpg_as_text1, 'binary_thresh': jpg_as_text2})
+#         except Exception as e:
+#             print(f"Error sending frames: {e}")
+#         frame_queue.task_done()
  
-def start_send_frames_thread():
-    stop_event.clear()
-    threading.Thread(target=send_frames, daemon=True).start()
+# def start_send_frames_thread():
+#     stop_event.clear()
+#     threading.Thread(target=send_frames, daemon=True).start()
  
-def stop_send_frames_thread():
-    stop_event.set()
-    frame_queue.put((None, None))  # Ensure the send_frames thread exits
+# def stop_send_frames_thread():
+#     stop_event.set()
+#     frame_queue.put((None, None))  # Ensure the send_frames thread exits
  
 def speak(text):
     process = multiprocessing.Process(target=_speak_process, args=(text,))
@@ -261,11 +261,6 @@ def get_binary_image(gray, threshold_value):
     binary_thresh = cv2.morphologyEx(binary_thresh, cv2.MORPH_OPEN, kernel, iterations=2)
     return binary_thresh
  
-# def get_adjusted_directions(orientation):
-#     directions = ["north", "east", "south", "west"]
-#     idx = directions.index(orientation)
-#     return directions[idx:] + directions[:idx]
- 
 def find_and_draw_contours(frame, binary_thresh,orientation, marker_detected):
     contours, hierarchy = cv2.findContours(binary_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     frame_center_x = frame.shape[1] // 2  # Calculate the center of the frame
@@ -457,9 +452,12 @@ def rotation_vector_to_euler_angles(rvec):
     return yaw
  
 def send_request_to_server(params, server_endpoint, method):
+    global is_busy
     # Define the URL and parameters
     url = server_endpoint
- 
+    if(url == URL_FOR_NEW_ROUTES):
+        cv2.destroyAllWindows()
+        is_busy = False
     # Send the request based on the specified method
     if method == "GET":
         response = requests.get(url, params=params)
@@ -548,6 +546,7 @@ def process_frames(sock, bytes):
     cv2.createTrackbar('Threshold', 'settings', 80, 255, update_value)
     cv2.createTrackbar('Contrast', 'settings', 19, 20, update_value)
     cv2.createTrackbar('Cont_rad', 'settings', 95, 100, update_value)
+    cv2.waitKey(1)
     send_commands = True  # Initialize the flag to True
     previous_marker = [-1]
     consecutive_left = 10   #counter for when its cosidered stuck on left turn- need to perform heavy left turn when 0
@@ -560,7 +559,7 @@ def process_frames(sock, bytes):
     frame_for_avg_offset = 0
     frame_on_checkpoint_encounter = 0
  
-    start_send_frames_thread() # Start the send_frames thread
+    #start_send_frames_thread() # Start the send_frames thread
  
     while True:
         threshold_value, contrast_factor, contrast_radius = get_trackbar_values()
@@ -591,7 +590,7 @@ def process_frames(sock, bytes):
                         else:
                             print("wrong turn - Requesting new route from server...")
                             speak("Wrong turn - Requesting new route from server...")
-                            stop_send_frames_thread()
+                            #stop_send_frames_thread()
                             is_busy = False
                             params = {
                                 "mapid": mapid,
@@ -605,9 +604,10 @@ def process_frames(sock, bytes):
                             path_from_marker_dict, number_list, mapid, orderid, orientation, trip_id = extract_path_data(path_data)
                             print("new route received- procceding...")
                             speak("New route received - proceeding...")
-                            start_send_frames_thread()
+                            #start_send_frames_thread()
                             numbers_list_idx = 0
                             is_busy = True
+                            #cv2.destroyAllWindows()
                             continue
                         #finished current path
                     if id_of_marker[0][0] == number_list[len(number_list) - 1][0]:
@@ -618,7 +618,7 @@ def process_frames(sock, bytes):
                         send_request_to_server(params, URL_FOR_CHECKPOINT_UPDATES, "POST")
                         finish_sending_all_requests(trip_id,number_list,mapid)
                         speak("Finished delivery - awaiting new orders...")
-                        stop_send_frames_thread()  # Stop the send_frames thread
+                       # stop_send_frames_thread()  # Stop the send_frames thread
                         break
                     elif id_of_marker[0][0] == number_list[numbers_list_idx][0]:
                         command_sent = calculate_direction_acording_to_orientation(orientation, id_of_marker[0][0], path_from_marker_dict)
@@ -726,8 +726,10 @@ def process_path():
         # Process the JSON data if needed
         path_data = data
         if "shortest_path" in path_data:
-            #main()  # Run the main function
-            threading.Thread(target=main).start()
+            @after_this_request
+            def start_main(response):
+                main()  # Run the main function
+                return response
             return jsonify({"status": "Processing started"}), 202
         else:
             return jsonify({"error": "Invalid JSON structure"}), 400
