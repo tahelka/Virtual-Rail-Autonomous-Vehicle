@@ -286,12 +286,14 @@ def get_route_instructions():
             except requests.exceptions.RequestException as e:
                 print(f"Error processing path: {e}")
 
-            try:
-                socketio.emit('new_trip', serialize_document(trip_document_for_emitting))
-                print("Emitted trip_update successfully.")
+            socketio.emit('new_trip', serialize_document(trip_document_for_emitting))
+
+            # try:
+            #     socketio.emit('new_trip', serialize_document(trip_document_for_emitting))
+            #     print("Emitted trip_update successfully.")
                 
-            except Exception as e:
-                print(f"Error emitting trip_update: {e}")
+            # except Exception as e:
+            #     print(f"Error emitting trip_update: {e}")
 
             return jsonify({
                 "shortest_path": calculated_path,
@@ -444,7 +446,6 @@ def calculate_worst_offset(trip_id):
 def is_trip_arrived_to_destination(trip_id):
     try:
         trip = vehicle_checkpoints_collection.find_one({'trip_id': trip_id, 'arrived_at_destination': 1})
-        print(trip)
         if trip:
             return 1  # Return 1 if the trip has arrived at the destination
         else:
