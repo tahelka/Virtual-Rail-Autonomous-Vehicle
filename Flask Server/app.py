@@ -286,14 +286,14 @@ def get_route_instructions():
             except requests.exceptions.RequestException as e:
                 print(f"Error processing path: {e}")
 
-            socketio.emit('new_trip', serialize_document(trip_document_for_emitting))
+            # socketio.emit('new_trip', serialize_document(trip_document_for_emitting))
 
-            # try:
-            #     socketio.emit('new_trip', serialize_document(trip_document_for_emitting))
-            #     print("Emitted trip_update successfully.")
+            try:
+                socketio.emit('new_trip', serialize_document(trip_document_for_emitting))
+                print("Emitted trip_update successfully.")
                 
-            # except Exception as e:
-            #     print(f"Error emitting trip_update: {e}")
+            except Exception as e:
+                print(f"Error emitting trip_update: {e}")
 
             return jsonify({
                 "shortest_path": calculated_path,
