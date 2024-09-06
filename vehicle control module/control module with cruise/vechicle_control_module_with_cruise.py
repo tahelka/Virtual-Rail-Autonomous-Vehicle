@@ -17,29 +17,25 @@ import threading
 import queue
  
  
-# Create a queue to hold the frames
+# Create queue to hold the frames
 frame_queue = queue.Queue()
  
 # Create an event to signal the send_frames thread to stop
 #stop_event = threading.Event()
  
 def generate_frames():
-    try:
-        processed_frame, binary_thresh = frame_queue.get(timeout=1)
-        processed_frame, binary_thresh = frame_queue.get(timeout=1)
-        # Convert frames to JPEG format
-        _, frame_encoded = cv2.imencode('.jpg', processed_frame)
-        _, binary_encoded = cv2.imencode('.jpg', binary_thresh)
-        frame_bytes = frame_encoded.tobytes()
-        binary_bytes = binary_encoded.tobytes()
+    while True:
+        try:
+            frame = frame_queue.get(timeout=1)
+            # Convert frame to JPEG format
+            _, frame_encoded = cv2.imencode('.jpg', frame)
+            frame_bytes = frame_encoded.tobytes()
             
-            # Yield the frames as multipart data
-        yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n\r\n' +
-                   b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + binary_bytes + b'\r\n\r\n')
-    except queue.Empty:
-        pass
+            # Yield the frame as multipart data
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n\r\n')
+        except queue.Empty:
+            continue
  
 def speak(text):
     process = multiprocessing.Process(target=_speak_process, args=(text,))
@@ -662,7 +658,7 @@ def process_frames(sock, bytes):
                     consecutive_right = 10
  
                 # Add the frames to the queue
-                frame_queue.put((frame, binary_thresh))
+                frame_queue.put(frame)
  
                 show_frames(binary_thresh, frame)
                 key = cv2.waitKey(1)
