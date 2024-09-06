@@ -7,7 +7,7 @@ import socket
 import urllib.parse
 import os
 import sys
-from flask import Flask, request, jsonify, after_this_request
+from flask import Flask, request, jsonify, after_this_request, Response, stream_with_context
 import math
 import requests
 import pyttsx3
@@ -21,35 +21,25 @@ import queue
 frame_queue = queue.Queue()
  
 # Create an event to signal the send_frames thread to stop
-stop_event = threading.Event()
+#stop_event = threading.Event()
  
-# def send_frames():
-#     while not stop_event.is_set():
-#         try:
-#             processed_frame, binary_thresh = frame_queue.get(timeout=1)
-#         except queue.Empty:
-#             continue
-#         if processed_frame is None and binary_thresh is None:
-#             break
-#         _, buffer1 = cv2.imencode('.jpg', processed_frame)
-#         jpg_as_text1 = buffer1.tobytes()
- 
-#         _, buffer2 = cv2.imencode('.jpg', binary_thresh)
-#         jpg_as_text2 = buffer2.tobytes()
- 
-#         try:
-#             requests.post('http://localhost:5001/Video', files={'processed_frame': jpg_as_text1, 'binary_thresh': jpg_as_text2})
-#         except Exception as e:
-#             print(f"Error sending frames: {e}")
-#         frame_queue.task_done()
- 
-# def start_send_frames_thread():
-#     stop_event.clear()
-#     threading.Thread(target=send_frames, daemon=True).start()
- 
-# def stop_send_frames_thread():
-#     stop_event.set()
-#     frame_queue.put((None, None))  # Ensure the send_frames thread exits
+def generate_frames():
+    try:
+        processed_frame, binary_thresh = frame_queue.get(timeout=1)
+        processed_frame, binary_thresh = frame_queue.get(timeout=1)
+        # Convert frames to JPEG format
+        _, frame_encoded = cv2.imencode('.jpg', processed_frame)
+        _, binary_encoded = cv2.imencode('.jpg', binary_thresh)
+        frame_bytes = frame_encoded.tobytes()
+        binary_bytes = binary_encoded.tobytes()
+            
+            # Yield the frames as multipart data
+        yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n\r\n' +
+                   b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + binary_bytes + b'\r\n\r\n')
+    except queue.Empty:
+        pass
  
 def speak(text):
     process = multiprocessing.Process(target=_speak_process, args=(text,))
@@ -340,21 +330,6 @@ def send_command(command):
     except urllib.error.URLError as e:
         print(f"Error sending {command} command: {e}")
         return None  # Return None if no command was sent
- 
-def opposite_command(command):
-    if command == GO:
-        return BACK
-    if command == LEFT:
-        return Right_back
-    elif command == RIGHT:
-        return Left_back
-    elif command == TURN_LEFT:
-        return TURN_RIGHT_back
-    elif command == TURN_RIGHT:
-        return TURN_LEFT_back
-    elif command == CROSS:
-        return CROSS_back
-    return command
  
 def extract_path_data(json_data):
     # Extracting data from JSON
@@ -714,7 +689,7 @@ def main():
             sock.close()  # Ensure the socket is closed at the end
     finally:
         is_busy = False  # Reset the server status
- 
+
 @vehicle_module.route('/process_path', methods=['POST'])
 def process_path():
     global is_busy, path_data
@@ -736,5 +711,9 @@ def process_path():
     else:
         return jsonify({"error": "Invalid request format"}), 400
  
+@vehicle_module.route('/stream_frames', methods=['GET'])
+def stream_frames():
+    return Response(stream_with_context(generate_frames()), mimetype='multipart/x-mixed-replace; boundary=frame')
+
 if __name__ == '__main__':
-    vehicle_module.run(debug=False, port=5001)  # Run the Flask app on port 5001
+    vehicle_module.run(debug=False, threaded=True, port=5001)  # Run the Flask app on port 5001
