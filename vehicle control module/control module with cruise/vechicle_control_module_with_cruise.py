@@ -58,10 +58,10 @@ def _speak_process(text):
 vehicle_module = Flask(__name__)
 is_busy = False
 kernel = np.ones((5, 5), np.uint8)
-stream_url = 'http://192.168.2.101:81/stream'
+stream_url = 'http://192.168.2.100:81/stream'
 bottom_percentage = 60 / 100
 # ESP32 server IP address and port
-esp32_ip = '192.168.2.101'
+esp32_ip = '192.168.2.100'
 esp32_port = '80'  # Assuming your ESP32 server is running on port 80
 #global no_data_received_counter, path_data, orientation
 orientation = "north"  # Default orientation of the vehicle
@@ -69,6 +69,7 @@ no_data_received_counter = 50  # Number of times to check for no data received b
 URL_FOR_NEW_ROUTES = "http://localhost:5000/api/graph"
 URL_FOR_CHECKPOINT_UPDATES = "http://localhost:5000/api/vehicle_checkpoints"
 FRAMES_BEFORE_SAME_TURN = 5
+COUNTER_FOR_CRUISE_MODE = 10
  
 #speaking if have time
 # # Initialize the text-to-speech engine
@@ -526,7 +527,7 @@ def process_frames(sock, bytes):
     previous_marker = [-1]
     consecutive_left = 10   #counter for when its cosidered stuck on left turn- need to perform heavy left turn when 0
     consecutive_right = 10  #counter for when its cosidered stuck on right turn- need to perform heavy right turn when 0
-    cruise_mode_counter = 7 #counter for when to start cruise mode
+    cruise_mode_counter = COUNTER_FOR_CRUISE_MODE #counter for when to start cruise mode
     path_from_marker_dict, number_list,mapid,orderid,orientation,trip_id = extract_path_data(path_data)
     numbers_list_idx = 0
     average_offset = 0
@@ -535,7 +536,7 @@ def process_frames(sock, bytes):
     frame_on_checkpoint_encounter = 0
  
     #start_send_frames_thread() # Start the send_frames thread
- 
+    speak("order received - starting delivery")
     while True:
         threshold_value, contrast_factor, contrast_radius = get_trackbar_values()
         jpg, bytes = get_latest_frame_bytes(sock, bytes) # Get the latest frame bytes
@@ -618,7 +619,7 @@ def process_frames(sock, bytes):
  
                     consecutive_left = 10
                     consecutive_right = 10
-                    cruise_mode_counter = 7
+                    cruise_mode_counter = COUNTER_FOR_CRUISE_MODE
                 if marker_detected == False or command_was_sent == False:  # if no marker detected or no command was sent
                     #previous_marker = [-1]  # Reset the previous marker
                     frame_for_avg_offset+=1
@@ -629,12 +630,12 @@ def process_frames(sock, bytes):
                                 command_sent = send_command(LEFT)
                                 consecutive_left -=1
                                 consecutive_right = 10
-                                cruise_mode_counter = 15
+                                cruise_mode_counter = COUNTER_FOR_CRUISE_MODE
                             elif offset > 50:
                                 command_sent = send_command(RIGHT)
                                 consecutive_right -=1
                                 consecutive_left = 10
-                                cruise_mode_counter = 15
+                                cruise_mode_counter = COUNTER_FOR_CRUISE_MODE
                             elif cruise_mode_counter > 0:
                                 command_sent = send_command(GO)
                                 cruise_mode_counter -=1
@@ -648,7 +649,7 @@ def process_frames(sock, bytes):
                                 send_command(CROSS_back)
                                 consecutive_left = 10
                                 consecutive_right = 10
-                                cruise_mode_counter = 15
+                                cruise_mode_counter = COUNTER_FOR_CRUISE_MODE
  
                     else:  #emergency stop
                         command_sent = send_command(STOP)
