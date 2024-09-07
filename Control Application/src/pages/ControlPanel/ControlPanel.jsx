@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   FormControl,
   InputLabel,
@@ -25,6 +25,7 @@ const fetchMaps = async () => {
 const ControlPanel = () => {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
+  const navigate = useNavigate();
 
   const paramMapId = queryParams.get("selectedMap") || "";
   const paramStart = queryParams.get("startingPoint") || "";
@@ -108,10 +109,21 @@ const ControlPanel = () => {
     try {
       const response = await axios.get(url);
 
-      console.log(response);
+      const trip_id = response?.data?.trip_id;
+
+      console.log(response?.data?.trip_id);
 
       setSnackbarSeverity("success");
-      setSnackbarMessage("Request successful!");
+      setSnackbarMessage(
+        "Trip has been started. You will be redirected to the trip details page shortly."
+      );
+
+      // Navigate to the trip page after a short delay
+      setTimeout(() => {
+        if (trip_id) {
+          navigate(`/trips/${trip_id}`);
+        }
+      }, 3000);
     } catch (error) {
       console.log(error);
       setSnackbarSeverity("error");

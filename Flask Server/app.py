@@ -57,14 +57,12 @@ def insert_vehicle_checkpoint():
         if field not in data:
             return jsonify({'error': f'Missing field: {field}'}), 400
 
-    # Retrieve the trip document to get the destination point
     trip = trips_collection.find_one({'_id': ObjectId(data['trip_id'])})
     if not trip:
         return jsonify({'error': 'Trip not found'}), 404
 
     destination_point = trip['destination_point']
     has_arrived = 1 if data['checkpoint_id'] == destination_point else 0
-    #print("point:", data['checkpoint_id'], "des:",trip['destination_point'], "has arrived:", has_arrived )
     
     checkpoint_doc = {
         'trip_id': data['trip_id'],
@@ -274,19 +272,18 @@ def get_route_instructions():
 
             print({
                 "shortest_path": calculated_path,
-                "trip_id": str(result.inserted_id)  # Include the trip ID in the response
+                "trip_id": str(result.inserted_id)  
                 })
 
             try:
                 response = requests.post(url, json={
                 "shortest_path": calculated_path,
-                "trip_id": str(result.inserted_id)  # Include the trip ID in the response
+                "trip_id": str(result.inserted_id)  
                 })
                 response.raise_for_status()
             except requests.exceptions.RequestException as e:
                 print(f"Error processing path: {e}")
 
-            # socketio.emit('new_trip', serialize_document(trip_document_for_emitting))
 
             try:
                 socketio.emit('new_trip', serialize_document(trip_document_for_emitting))
@@ -297,7 +294,7 @@ def get_route_instructions():
 
             return jsonify({
                 "shortest_path": calculated_path,
-                "trip_id": trip_id  # Include the trip ID in the response
+                "trip_id": str(result.inserted_id)
             }), 200
         else:
             return jsonify({"message": "No paths found"}), 404
