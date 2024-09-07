@@ -20,9 +20,6 @@ import queue
 # Create queue to hold the frames
 frame_queue = queue.Queue()
  
-# Create an event to signal the send_frames thread to stop
-#stop_event = threading.Event()
- 
 def generate_frames():
     while True:
         try:
@@ -62,14 +59,11 @@ esp32_port = '80'  # Assuming your ESP32 server is running on port 80
 #global no_data_received_counter, path_data, orientation
 orientation = "north"  # Default orientation of the vehicle
 no_data_received_counter = 50  # Number of times to check for no data received before restarting the entire program
-URL_FOR_NEW_ROUTES = "http://localhost:5000/api/graph"
+URL_FOR_NEW_ROUTES = "http://localhost:5000/api/reroute"
 URL_FOR_CHECKPOINT_UPDATES = "http://localhost:5000/api/vehicle_checkpoints"
 FRAMES_BEFORE_SAME_TURN = 5
 COUNTER_FOR_CRUISE_MODE = 10
- 
-#speaking if have time
-# # Initialize the text-to-speech engine
- 
+
 # Define constants for command names
 GO = "go"
 CRUISE_GO = "cgo"
