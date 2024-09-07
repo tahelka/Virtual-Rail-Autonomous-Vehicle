@@ -373,12 +373,7 @@ def get_route_instructions_reroute():
             # Insert the trip document into the trips collection
             result = trips_collection.insert_one(trip_document)
 
-            trip_document_for_emitting = { 
-            'trip_id': str(result.inserted_id),
-            'avg_offset': 0,
-            'created_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "arrived_at_destination": has_arrived
-            }           
+            socketio.emit('inserted_id', {'id': str(result.inserted_id)})      
 
             return jsonify({
                 "shortest_path": calculated_path,
