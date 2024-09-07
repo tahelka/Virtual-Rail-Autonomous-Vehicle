@@ -4,7 +4,7 @@ import axios from "axios";
 import { Grid, Typography, Card, CardContent } from "@mui/material";
 import io from "socket.io-client";
 import TimelineComponent from "../../Components/TimelineComponent/TimelineComponent";
-import StatsDisplay from '../../Components/StatsDisplay/RealTimeStatsDisplay';
+import StatsDisplay from "../../Components/StatsDisplay/RealTimeStatsDisplay";
 
 const socket = io("http://localhost:5000");
 
@@ -81,15 +81,35 @@ const TripDetails = () => {
       </Grid>
 
       <Grid item xs={12}>
+        <Card
+          variant="outlined"
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "400px", // Adjust height as needed
+          }}
+        >
+          <img
+            src="http://localhost:5001/stream_frames"
+            alt="Original Frame"
+            style={{ width: "100%", maxWidth: "600px" }} // Corrected style prop
+          />
+        </Card>
+      </Grid>
+
+      <Grid item xs={12}>
         <Card variant="outlined">
           <CardContent>
             <Typography variant="h5" component="div" gutterBottom>
               Real Time Statistics
             </Typography>
             <Typography variant="body1" color="text.secondary" paragraph>
-              Here you can watch real-time statistics about the vehicle’s performance and track its stability from one checkpoint to the next.
+              Here you can watch real-time statistics about the vehicle’s
+              performance and track its stability from one checkpoint to the
+              next.
             </Typography>
-            <StatsDisplay checkpointsData={checkpointsData}/>
+            <StatsDisplay checkpointsData={checkpointsData} />
           </CardContent>
         </Card>
       </Grid>
