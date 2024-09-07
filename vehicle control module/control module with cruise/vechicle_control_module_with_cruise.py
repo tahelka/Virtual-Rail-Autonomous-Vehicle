@@ -692,10 +692,7 @@ def process_path():
         # Process the JSON data if needed
         path_data = data
         if "shortest_path" in path_data:
-            @after_this_request
-            def start_main(response):
-                main()  # Run the main function
-                return response
+            threading.Thread(target=main).start()
             return jsonify({"status": "Processing started"}), 202
         else:
             return jsonify({"error": "Invalid JSON structure"}), 400
