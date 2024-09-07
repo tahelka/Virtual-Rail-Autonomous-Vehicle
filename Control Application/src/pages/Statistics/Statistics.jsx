@@ -51,7 +51,7 @@ const Statistics = () => {
             : trip
         );
         //localStorage.setItem('telemetryData', JSON.stringify(updatedTelemetryData));
-        return updatedTelemetryData;
+        return [...updatedTelemetryData];
       });
     });
 
@@ -69,7 +69,7 @@ const Statistics = () => {
 
         //localStorage.setItem('telemetryData', JSON.stringify(updatedTelemetryData));
 
-        return updatedTelemetryData;
+        return [...updatedTelemetryData];
       });
     });
 
