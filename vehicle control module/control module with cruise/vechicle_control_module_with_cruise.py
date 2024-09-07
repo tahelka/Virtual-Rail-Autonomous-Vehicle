@@ -58,7 +58,7 @@ esp32_ip = '192.168.2.100'
 esp32_port = '80'  # Assuming your ESP32 server is running on port 80
 #global no_data_received_counter, path_data, orientation
 orientation = "north"  # Default orientation of the vehicle
-no_data_received_counter = 50  # Number of times to check for no data received before restarting the entire program
+no_data_received_counter = 100  # Number of times to check for no data received before restarting the entire program
 URL_FOR_NEW_ROUTES = "http://localhost:5000/api/reroute"
 URL_FOR_CHECKPOINT_UPDATES = "http://localhost:5000/api/vehicle_checkpoints"
 FRAMES_BEFORE_SAME_TURN = 5
@@ -606,7 +606,7 @@ def process_frames(sock, bytes):
                 if marker_detected == False or command_was_sent == False:  # if no marker detected or no command was sent
                     #previous_marker = [-1]  # Reset the previous marker
                     frame_for_avg_offset+=1
-                    average_offset = (average_offset + abs(offset)) / frame_for_avg_offset   # Calculate the average offset only when no marker is detected
+                    average_offset = average_offset + (abs(offset) - average_offset) / frame_for_avg_offset   # Calculate the running average offset only when no marker is detected
                     if send_commands:  # Only send commands if the flag is True
                         if foundContour == True:
                             if offset < -50:
