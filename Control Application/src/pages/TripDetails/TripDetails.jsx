@@ -87,13 +87,13 @@ const TripDetails = () => {
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            height: "400px", // Adjust height as needed
+            height: "400px",
           }}
         >
           <img
             src="http://localhost:5001/stream_frames"
             alt="Original Frame"
-            style={{ width: "100%", maxWidth: "600px" }} // Corrected style prop
+            style={{ width: "100%", maxWidth: "600px" }}
           />
         </Card>
       </Grid>
