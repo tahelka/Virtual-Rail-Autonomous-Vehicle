@@ -92,7 +92,7 @@ const TripDetails = () => {
         >
           <img
             src="http://localhost:5001/stream_frames"
-            alt="Original Frame"
+            alt="Video Stream"
             style={{ width: "100%", maxWidth: "600px" }}
           />
         </Card>
