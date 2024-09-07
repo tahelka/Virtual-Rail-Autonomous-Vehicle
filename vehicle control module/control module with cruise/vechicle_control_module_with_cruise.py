@@ -461,6 +461,7 @@ def finish_sending_all_requests(trip_id,number_list,mapid):
     if(smallest_time is None):
         smallest_time = datetime.combine(datetime.today(), datetime.min.time()) #set to 0:00 if we have no first checkpoint start time
         params = prepare_data_for_server(trip_id, int(number_list[0][0]), mapid, 0, number_list, 0, True) #send 0 offset for first checkpoint to show if passed it
+        send_request_to_server(params, URL_FOR_CHECKPOINT_UPDATES, "POST") #send first checkpoint if missed
     for i in range(len(number_list)-1):
         if number_list[i+1][2] is not None:
             if number_list[i+1][2] < minimum_offset:
