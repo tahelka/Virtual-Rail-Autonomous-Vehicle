@@ -20,9 +20,6 @@ import queue
 # Create queue to hold the frames
 frame_queue = queue.Queue()
  
-# Create an event to signal the send_frames thread to stop
-#stop_event = threading.Event()
- 
 def generate_frames():
     while True:
         try:
@@ -62,14 +59,11 @@ esp32_port = '80'  # Assuming your ESP32 server is running on port 80
 #global no_data_received_counter, path_data, orientation
 orientation = "north"  # Default orientation of the vehicle
 no_data_received_counter = 50  # Number of times to check for no data received before restarting the entire program
-URL_FOR_NEW_ROUTES = "http://localhost:5000/api/graph"
+URL_FOR_NEW_ROUTES = "http://localhost:5000/api/reroute"
 URL_FOR_CHECKPOINT_UPDATES = "http://localhost:5000/api/vehicle_checkpoints"
 FRAMES_BEFORE_SAME_TURN = 5
 COUNTER_FOR_CRUISE_MODE = 10
- 
-#speaking if have time
-# # Initialize the text-to-speech engine
- 
+
 # Define constants for command names
 GO = "go"
 CRUISE_GO = "cgo"
@@ -424,12 +418,8 @@ def rotation_vector_to_euler_angles(rvec):
     return yaw
  
 def send_request_to_server(params, server_endpoint, method):
-    global is_busy
     # Define the URL and parameters
     url = server_endpoint
-    if(url == URL_FOR_NEW_ROUTES):
-        cv2.destroyAllWindows()
-        is_busy = False
     # Send the request based on the specified method
     if method == "GET":
         response = requests.get(url, params=params)
@@ -470,6 +460,8 @@ def finish_sending_all_requests(trip_id,number_list,mapid):
     smallest_time = number_list[0][1]
     if(smallest_time is None):
         smallest_time = datetime.combine(datetime.today(), datetime.min.time()) #set to 0:00 if we have no first checkpoint start time
+        params = prepare_data_for_server(trip_id, int(number_list[0][0]), mapid, 0, number_list, 0, True) #send 0 offset for first checkpoint to show if passed it
+        send_request_to_server(params, URL_FOR_CHECKPOINT_UPDATES, "POST") #send first checkpoint if missed
     for i in range(len(number_list)-1):
         if number_list[i+1][2] is not None:
             if number_list[i+1][2] < minimum_offset:
@@ -530,9 +522,8 @@ def process_frames(sock, bytes):
     frame_number = 0
     frame_for_avg_offset = 0
     frame_on_checkpoint_encounter = 0
- 
-    #start_send_frames_thread() # Start the send_frames thread
     speak("order received - starting delivery")
+
     while True:
         threshold_value, contrast_factor, contrast_radius = get_trackbar_values()
         jpg, bytes = get_latest_frame_bytes(sock, bytes) # Get the latest frame bytes
@@ -562,7 +553,6 @@ def process_frames(sock, bytes):
                         else:
                             print("wrong turn - Requesting new route from server...")
                             speak("Wrong turn - Requesting new route from server...")
-                            #stop_send_frames_thread()
                             is_busy = False
                             params = {
                                 "mapid": mapid,
@@ -576,10 +566,8 @@ def process_frames(sock, bytes):
                             path_from_marker_dict, number_list, mapid, orderid, orientation, trip_id = extract_path_data(path_data)
                             print("new route received- procceding...")
                             speak("New route received - proceeding...")
-                            #start_send_frames_thread()
                             numbers_list_idx = 0
                             is_busy = True
-                            #cv2.destroyAllWindows()
                             continue
                         #finished current path
                     if id_of_marker[0][0] == number_list[len(number_list) - 1][0]:
@@ -590,7 +578,6 @@ def process_frames(sock, bytes):
                         send_request_to_server(params, URL_FOR_CHECKPOINT_UPDATES, "POST")
                         finish_sending_all_requests(trip_id,number_list,mapid)
                         speak("Finished delivery - awaiting new orders...")
-                       # stop_send_frames_thread()  # Stop the send_frames thread
                         break
                     elif id_of_marker[0][0] == number_list[numbers_list_idx][0]:
                         command_sent = calculate_direction_acording_to_orientation(orientation, id_of_marker[0][0], path_from_marker_dict)
@@ -698,10 +685,7 @@ def process_path():
         # Process the JSON data if needed
         path_data = data
         if "shortest_path" in path_data:
-            @after_this_request
-            def start_main(response):
-                main()  # Run the main function
-                return response
+            threading.Thread(target=main).start()
             return jsonify({"status": "Processing started"}), 202
         else:
             return jsonify({"error": "Invalid JSON structure"}), 400
