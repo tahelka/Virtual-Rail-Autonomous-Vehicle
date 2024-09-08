@@ -51,10 +51,10 @@ def _speak_process(text):
 vehicle_module = Flask(__name__)
 is_busy = False
 kernel = np.ones((5, 5), np.uint8)
-stream_url = 'http://192.168.2.100:81/stream'
+stream_url = 'http://192.168.2.101:81/stream'
 bottom_percentage = 60 / 100
 # ESP32 server IP address and port
-esp32_ip = '192.168.2.100'
+esp32_ip = '192.168.2.101'
 esp32_port = '80'  # Assuming your ESP32 server is running on port 80
 #global no_data_received_counter, path_data, orientation
 orientation = "north"  # Default orientation of the vehicle

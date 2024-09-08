@@ -62,7 +62,7 @@ def insert_vehicle_checkpoint():
         return jsonify({'error': 'Trip not found'}), 404
 
     destination_point = trip['destination_point']
-    has_arrived = 1 if data['checkpoint_id'] == destination_point else 0
+    has_arrived = 1 if str(data['checkpoint_id']) == str(destination_point) else 0
     
     checkpoint_doc = {
         'trip_id': data['trip_id'],
@@ -355,7 +355,7 @@ def get_route_instructions_reroute():
                 "orderid": orderid,
             }
             
-            has_arrived = 1 if start == target else 0
+            has_arrived = 1 if str(start) == str(target) else 0
 
             trip_document = {
                 "map_id": mapid,
@@ -527,8 +527,10 @@ def is_trip_arrived_to_destination(trip_id):
     try:
         trip = vehicle_checkpoints_collection.find_one({'trip_id': trip_id, 'arrived_at_destination': 1})
         if trip:
+            print("yess")
             return 1  # Return 1 if the trip has arrived at the destination
         else:
+            print("Nooo")
             return 0  # Return 0 if the trip hasn't arrived or is not found
     except Exception as e:
         print(f"Error checking arrival status for trip ID {trip_id}: {str(e)}")
