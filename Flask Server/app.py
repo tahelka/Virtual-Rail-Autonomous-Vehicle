@@ -57,14 +57,12 @@ def insert_vehicle_checkpoint():
         if field not in data:
             return jsonify({'error': f'Missing field: {field}'}), 400
 
-    # Retrieve the trip document to get the destination point
     trip = trips_collection.find_one({'_id': ObjectId(data['trip_id'])})
     if not trip:
         return jsonify({'error': 'Trip not found'}), 404
 
     destination_point = trip['destination_point']
     has_arrived = 1 if data['checkpoint_id'] == destination_point else 0
-    #print("point:", data['checkpoint_id'], "des:",trip['destination_point'], "has arrived:", has_arrived )
     
     checkpoint_doc = {
         'trip_id': data['trip_id'],
@@ -274,19 +272,18 @@ def get_route_instructions():
 
             print({
                 "shortest_path": calculated_path,
-                "trip_id": str(result.inserted_id)  # Include the trip ID in the response
+                "trip_id": str(result.inserted_id)  
                 })
 
             try:
                 response = requests.post(url, json={
                 "shortest_path": calculated_path,
-                "trip_id": str(result.inserted_id)  # Include the trip ID in the response
+                "trip_id": str(result.inserted_id)  
                 })
                 response.raise_for_status()
             except requests.exceptions.RequestException as e:
                 print(f"Error processing path: {e}")
 
-            # socketio.emit('new_trip', serialize_document(trip_document_for_emitting))
 
             try:
                 socketio.emit('new_trip', serialize_document(trip_document_for_emitting))
@@ -297,7 +294,90 @@ def get_route_instructions():
 
             return jsonify({
                 "shortest_path": calculated_path,
-                "trip_id": trip_id  # Include the trip ID in the response
+                "trip_id": str(result.inserted_id)
+            }), 200
+        else:
+            return jsonify({"message": "No paths found"}), 404
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+    
+@app.route('/api/reroute', methods=['GET'])
+def get_route_instructions_reroute():
+    try:
+        # Extract query parameters
+        mapid = request.args.get('mapid')
+        start = request.args.get('start')
+        target = request.args.get('target')
+        orientation = request.args.get('orientation')
+        orderid = request.args.get('orderid')
+        
+        # Validate query parameters
+        if not mapid or not start or not target or not orientation:
+            return jsonify({"error": "mapid, start, target, and orientation parameters are required"}), 400
+        
+        # Fetch map data from MongoDB
+        map_document = maps_collection.find_one({'_id': mapid})
+        
+        if not map_document:
+            return jsonify({"message": "Map not found"}), 404
+        
+        # Get the graph data from the MongoDB document
+        graph_data = map_document.get('map_data')
+        
+        if not graph_data:
+            return jsonify({"message": "Graph data not found in the map document"}), 404
+        
+        # Initialize the graph and populate it with the data
+        graph = Graph()
+        for node in graph_data:
+            graph.add_vertex(node['id'])
+        for node in graph_data:
+            for edge in node['edges']:
+                graph.add_edge(node['id'], edge['vertex'], edge['direction'])
+        
+        # Validate start and target parameters
+        if not start or not target:
+            return jsonify({"error": "Start and target parameters are required"}), 400
+        
+        # Find all paths and shortest paths
+        all_paths = graph.find_all_paths(start, target)
+        shortest_paths = graph.find_shortest_paths(all_paths)
+        
+        # Return the shortest path
+        if shortest_paths:
+            path_obj = shortest_paths[0]
+            calculated_path = {
+                "path": path_obj['path']['path'],
+                "directions": path_obj['path']['directions'],
+                "orientation": orientation,
+                "mapid": mapid,
+                "orderid": orderid,
+            }
+            
+            has_arrived = 1 if start == target else 0
+
+            trip_document = {
+                "map_id": mapid,
+                "order_id": orderid,
+                "starting_point": start,
+                "destination_point": target,
+                "starting_orientation": orientation,
+                "created_at": datetime.now(),
+                "directions": calculated_path["directions"],
+                "path": calculated_path["path"],
+                "arrived_at_destination": has_arrived,
+                "avg_offset": 0.0,
+            }
+
+            # Insert the trip document into the trips collection
+            result = trips_collection.insert_one(trip_document)
+
+            socketio.emit('inserted_id', {'id': str(result.inserted_id)})      
+
+            return jsonify({
+                "shortest_path": calculated_path,
+                "trip_id": str(result.inserted_id)
             }), 200
         else:
             return jsonify({"message": "No paths found"}), 404

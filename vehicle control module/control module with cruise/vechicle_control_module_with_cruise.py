@@ -7,7 +7,7 @@ import socket
 import urllib.parse
 import os
 import sys
-from flask import Flask, request, jsonify, after_this_request
+from flask import Flask, request, jsonify, after_this_request, Response, stream_with_context
 import math
 import requests
 import pyttsx3
@@ -17,39 +17,22 @@ import threading
 import queue
  
  
-# Create a queue to hold the frames
+# Create queue to hold the frames
 frame_queue = queue.Queue()
  
-# Create an event to signal the send_frames thread to stop
-stop_event = threading.Event()
- 
-# def send_frames():
-#     while not stop_event.is_set():
-#         try:
-#             processed_frame, binary_thresh = frame_queue.get(timeout=1)
-#         except queue.Empty:
-#             continue
-#         if processed_frame is None and binary_thresh is None:
-#             break
-#         _, buffer1 = cv2.imencode('.jpg', processed_frame)
-#         jpg_as_text1 = buffer1.tobytes()
- 
-#         _, buffer2 = cv2.imencode('.jpg', binary_thresh)
-#         jpg_as_text2 = buffer2.tobytes()
- 
-#         try:
-#             requests.post('http://localhost:5001/Video', files={'processed_frame': jpg_as_text1, 'binary_thresh': jpg_as_text2})
-#         except Exception as e:
-#             print(f"Error sending frames: {e}")
-#         frame_queue.task_done()
- 
-# def start_send_frames_thread():
-#     stop_event.clear()
-#     threading.Thread(target=send_frames, daemon=True).start()
- 
-# def stop_send_frames_thread():
-#     stop_event.set()
-#     frame_queue.put((None, None))  # Ensure the send_frames thread exits
+def generate_frames():
+    while True:
+        try:
+            frame = frame_queue.get(timeout=1)
+            # Convert frame to JPEG format
+            _, frame_encoded = cv2.imencode('.jpg', frame)
+            frame_bytes = frame_encoded.tobytes()
+            
+            # Yield the frame as multipart data
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n\r\n')
+        except queue.Empty:
+            continue
  
 def speak(text):
     process = multiprocessing.Process(target=_speak_process, args=(text,))
@@ -68,21 +51,19 @@ def _speak_process(text):
 vehicle_module = Flask(__name__)
 is_busy = False
 kernel = np.ones((5, 5), np.uint8)
-stream_url = 'http://192.168.2.101:81/stream'
+stream_url = 'http://192.168.2.100:81/stream'
 bottom_percentage = 60 / 100
 # ESP32 server IP address and port
-esp32_ip = '192.168.2.101'
+esp32_ip = '192.168.2.100'
 esp32_port = '80'  # Assuming your ESP32 server is running on port 80
 #global no_data_received_counter, path_data, orientation
 orientation = "north"  # Default orientation of the vehicle
-no_data_received_counter = 50  # Number of times to check for no data received before restarting the entire program
-URL_FOR_NEW_ROUTES = "http://localhost:5000/api/graph"
+no_data_received_counter = 100  # Number of times to check for no data received before restarting the entire program
+URL_FOR_NEW_ROUTES = "http://localhost:5000/api/reroute"
 URL_FOR_CHECKPOINT_UPDATES = "http://localhost:5000/api/vehicle_checkpoints"
 FRAMES_BEFORE_SAME_TURN = 5
- 
-#speaking if have time
-# # Initialize the text-to-speech engine
- 
+COUNTER_FOR_CRUISE_MODE = 10
+
 # Define constants for command names
 GO = "go"
 CRUISE_GO = "cgo"
@@ -341,21 +322,6 @@ def send_command(command):
         print(f"Error sending {command} command: {e}")
         return None  # Return None if no command was sent
  
-def opposite_command(command):
-    if command == GO:
-        return BACK
-    if command == LEFT:
-        return Right_back
-    elif command == RIGHT:
-        return Left_back
-    elif command == TURN_LEFT:
-        return TURN_RIGHT_back
-    elif command == TURN_RIGHT:
-        return TURN_LEFT_back
-    elif command == CROSS:
-        return CROSS_back
-    return command
- 
 def extract_path_data(json_data):
     # Extracting data from JSON
     directions = json_data['shortest_path']['directions']
@@ -452,12 +418,8 @@ def rotation_vector_to_euler_angles(rvec):
     return yaw
  
 def send_request_to_server(params, server_endpoint, method):
-    global is_busy
     # Define the URL and parameters
     url = server_endpoint
-    if(url == URL_FOR_NEW_ROUTES):
-        cv2.destroyAllWindows()
-        is_busy = False
     # Send the request based on the specified method
     if method == "GET":
         response = requests.get(url, params=params)
@@ -498,6 +460,8 @@ def finish_sending_all_requests(trip_id,number_list,mapid):
     smallest_time = number_list[0][1]
     if(smallest_time is None):
         smallest_time = datetime.combine(datetime.today(), datetime.min.time()) #set to 0:00 if we have no first checkpoint start time
+        params = prepare_data_for_server(trip_id, int(number_list[0][0]), mapid, 0, number_list, 0, True) #send 0 offset for first checkpoint to show if passed it
+        send_request_to_server(params, URL_FOR_CHECKPOINT_UPDATES, "POST") #send first checkpoint if missed
     for i in range(len(number_list)-1):
         if number_list[i+1][2] is not None:
             if number_list[i+1][2] < minimum_offset:
@@ -551,16 +515,15 @@ def process_frames(sock, bytes):
     previous_marker = [-1]
     consecutive_left = 10   #counter for when its cosidered stuck on left turn- need to perform heavy left turn when 0
     consecutive_right = 10  #counter for when its cosidered stuck on right turn- need to perform heavy right turn when 0
-    cruise_mode_counter = 7 #counter for when to start cruise mode
+    cruise_mode_counter = COUNTER_FOR_CRUISE_MODE #counter for when to start cruise mode
     path_from_marker_dict, number_list,mapid,orderid,orientation,trip_id = extract_path_data(path_data)
     numbers_list_idx = 0
     average_offset = 0
     frame_number = 0
     frame_for_avg_offset = 0
     frame_on_checkpoint_encounter = 0
- 
-    #start_send_frames_thread() # Start the send_frames thread
- 
+    speak("order received - starting delivery")
+
     while True:
         threshold_value, contrast_factor, contrast_radius = get_trackbar_values()
         jpg, bytes = get_latest_frame_bytes(sock, bytes) # Get the latest frame bytes
@@ -590,7 +553,6 @@ def process_frames(sock, bytes):
                         else:
                             print("wrong turn - Requesting new route from server...")
                             speak("Wrong turn - Requesting new route from server...")
-                            #stop_send_frames_thread()
                             is_busy = False
                             params = {
                                 "mapid": mapid,
@@ -604,10 +566,8 @@ def process_frames(sock, bytes):
                             path_from_marker_dict, number_list, mapid, orderid, orientation, trip_id = extract_path_data(path_data)
                             print("new route received- procceding...")
                             speak("New route received - proceeding...")
-                            #start_send_frames_thread()
                             numbers_list_idx = 0
                             is_busy = True
-                            #cv2.destroyAllWindows()
                             continue
                         #finished current path
                     if id_of_marker[0][0] == number_list[len(number_list) - 1][0]:
@@ -618,7 +578,6 @@ def process_frames(sock, bytes):
                         send_request_to_server(params, URL_FOR_CHECKPOINT_UPDATES, "POST")
                         finish_sending_all_requests(trip_id,number_list,mapid)
                         speak("Finished delivery - awaiting new orders...")
-                       # stop_send_frames_thread()  # Stop the send_frames thread
                         break
                     elif id_of_marker[0][0] == number_list[numbers_list_idx][0]:
                         command_sent = calculate_direction_acording_to_orientation(orientation, id_of_marker[0][0], path_from_marker_dict)
@@ -643,23 +602,23 @@ def process_frames(sock, bytes):
  
                     consecutive_left = 10
                     consecutive_right = 10
-                    cruise_mode_counter = 7
+                    cruise_mode_counter = COUNTER_FOR_CRUISE_MODE
                 if marker_detected == False or command_was_sent == False:  # if no marker detected or no command was sent
                     #previous_marker = [-1]  # Reset the previous marker
                     frame_for_avg_offset+=1
-                    average_offset = (average_offset + abs(offset)) / frame_for_avg_offset   # Calculate the average offset only when no marker is detected
+                    average_offset = average_offset + (abs(offset) - average_offset) / frame_for_avg_offset   # Calculate the running average offset only when no marker is detected
                     if send_commands:  # Only send commands if the flag is True
                         if foundContour == True:
                             if offset < -50:
                                 command_sent = send_command(LEFT)
                                 consecutive_left -=1
                                 consecutive_right = 10
-                                cruise_mode_counter = 15
+                                cruise_mode_counter = COUNTER_FOR_CRUISE_MODE
                             elif offset > 50:
                                 command_sent = send_command(RIGHT)
                                 consecutive_right -=1
                                 consecutive_left = 10
-                                cruise_mode_counter = 15
+                                cruise_mode_counter = COUNTER_FOR_CRUISE_MODE
                             elif cruise_mode_counter > 0:
                                 command_sent = send_command(GO)
                                 cruise_mode_counter -=1
@@ -673,7 +632,7 @@ def process_frames(sock, bytes):
                                 send_command(CROSS_back)
                                 consecutive_left = 10
                                 consecutive_right = 10
-                                cruise_mode_counter = 15
+                                cruise_mode_counter = COUNTER_FOR_CRUISE_MODE
  
                     else:  #emergency stop
                         command_sent = send_command(STOP)
@@ -686,7 +645,7 @@ def process_frames(sock, bytes):
                     consecutive_right = 10
  
                 # Add the frames to the queue
-                frame_queue.put((frame, binary_thresh))
+                frame_queue.put(frame)
  
                 show_frames(binary_thresh, frame)
                 key = cv2.waitKey(1)
@@ -714,7 +673,7 @@ def main():
             sock.close()  # Ensure the socket is closed at the end
     finally:
         is_busy = False  # Reset the server status
- 
+
 @vehicle_module.route('/process_path', methods=['POST'])
 def process_path():
     global is_busy, path_data
@@ -726,15 +685,16 @@ def process_path():
         # Process the JSON data if needed
         path_data = data
         if "shortest_path" in path_data:
-            @after_this_request
-            def start_main(response):
-                main()  # Run the main function
-                return response
+            threading.Thread(target=main).start()
             return jsonify({"status": "Processing started"}), 202
         else:
             return jsonify({"error": "Invalid JSON structure"}), 400
     else:
         return jsonify({"error": "Invalid request format"}), 400
  
+@vehicle_module.route('/stream_frames', methods=['GET'])
+def stream_frames():
+    return Response(stream_with_context(generate_frames()), mimetype='multipart/x-mixed-replace; boundary=frame')
+
 if __name__ == '__main__':
-    vehicle_module.run(debug=False, port=5001)  # Run the Flask app on port 5001
+    vehicle_module.run(debug=False, threaded=True, port=5001)  # Run the Flask app on port 5001

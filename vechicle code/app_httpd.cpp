@@ -18,7 +18,7 @@ extern int gpLed;
 extern String WiFiAddr;
 
 const uint8_t regular_speed = 100;
-const uint8_t cruise_speed = 85;
+const uint8_t cruise_speed = 90;
 //const uint8_t reverse_speed = 100;
 const uint8_t high_speed = 180;
 const uint8_t turn_speed = 110;
