@@ -63,6 +63,8 @@ URL_FOR_NEW_ROUTES = "http://localhost:5000/api/reroute"
 URL_FOR_CHECKPOINT_UPDATES = "http://localhost:5000/api/vehicle_checkpoints"
 FRAMES_BEFORE_SAME_TURN = 5
 COUNTER_FOR_CRUISE_MODE = 10
+COUNTER_FOR_HEAVY_LEFT = 10
+COUNTER_FOR_HEAVY_RIGHT = 10
 
 # Define constants for command names
 GO = "go"
@@ -513,8 +515,8 @@ def process_frames(sock, bytes):
     cv2.waitKey(1)
     send_commands = True  # Initialize the flag to True
     previous_marker = [-1]
-    consecutive_left = 10   #counter for when its cosidered stuck on left turn- need to perform heavy left turn when 0
-    consecutive_right = 10  #counter for when its cosidered stuck on right turn- need to perform heavy right turn when 0
+    consecutive_left = COUNTER_FOR_HEAVY_LEFT   #counter for when its cosidered stuck on left turn- need to perform heavy left turn when 0
+    consecutive_right = COUNTER_FOR_HEAVY_LEFT  #counter for when its cosidered stuck on right turn- need to perform heavy right turn when 0
     cruise_mode_counter = COUNTER_FOR_CRUISE_MODE #counter for when to start cruise mode
     path_from_marker_dict, number_list,mapid,orderid,orientation,trip_id = extract_path_data(path_data)
     numbers_list_idx = 0
@@ -600,8 +602,8 @@ def process_frames(sock, bytes):
                     if command_sent is not None:
                         command_was_sent = True
  
-                    consecutive_left = 10
-                    consecutive_right = 10
+                    consecutive_left = COUNTER_FOR_HEAVY_LEFT
+                    consecutive_right = COUNTER_FOR_HEAVY_RIGHT
                     cruise_mode_counter = COUNTER_FOR_CRUISE_MODE
                 if marker_detected == False or command_was_sent == False:  # if no marker detected or no command was sent
                     #previous_marker = [-1]  # Reset the previous marker
@@ -612,26 +614,26 @@ def process_frames(sock, bytes):
                             if offset < -50:
                                 command_sent = send_command(LEFT)
                                 consecutive_left -=1
-                                consecutive_right = 10
+                                consecutive_right = COUNTER_FOR_HEAVY_RIGHT
                                 cruise_mode_counter = COUNTER_FOR_CRUISE_MODE
                             elif offset > 50:
                                 command_sent = send_command(RIGHT)
                                 consecutive_right -=1
-                                consecutive_left = 10
+                                consecutive_left = COUNTER_FOR_HEAVY_LEFT
                                 cruise_mode_counter = COUNTER_FOR_CRUISE_MODE
                             elif cruise_mode_counter > 0:
                                 command_sent = send_command(GO)
                                 cruise_mode_counter -=1
-                                consecutive_left = 10
-                                consecutive_right = 10
+                                consecutive_left = COUNTER_FOR_HEAVY_LEFT
+                                consecutive_right = COUNTER_FOR_HEAVY_LEFT
                             elif cruise_mode_counter == 0:
                                 command_sent = send_command(CRUISE_GO)
                                 cruise_mode_counter -=1 # drop it below 0 so we wont send cruise_go commands for no reason(one command is enough its a continous command)
                         elif foundContour == False: # If the flag is False, start backtracking
                                 command_sent = None
                                 send_command(CROSS_back)
-                                consecutive_left = 10
-                                consecutive_right = 10
+                                consecutive_left = COUNTER_FOR_HEAVY_LEFT
+                                consecutive_right = COUNTER_FOR_HEAVY_RIGHT
                                 cruise_mode_counter = COUNTER_FOR_CRUISE_MODE
  
                     else:  #emergency stop
@@ -639,10 +641,10 @@ def process_frames(sock, bytes):
                     command_was_sent = True
                 if consecutive_left == 0:   # if stuck on left turn perform strong left turn
                     send_command(HEAVY_LEFT)
-                    consecutive_left = 10
+                    consecutive_left = COUNTER_FOR_HEAVY_LEFT
                 elif consecutive_right == 0:  # if stuck on right turn perform strong right turn
                     send_command(HEAVY_RIGHT)
-                    consecutive_right = 10
+                    consecutive_right = COUNTER_FOR_HEAVY_RIGHT
  
                 # Add the frames to the queue
                 frame_queue.put(frame)
